@@ -14,6 +14,7 @@ pub struct BlockCatch {
 
     pub max_block_spawn_time: u8,
     pub difficulty_timer: u8,
+    pub score: u32,
 }
 
 impl Default for BlockCatch {
@@ -27,6 +28,7 @@ impl Default for BlockCatch {
 
             max_block_spawn_time: Self::INITIAL_MAX_BLOCK_SPAWN_TIME,
             difficulty_timer: Self::MAX_DIFFICULTY_TIME,
+            score: 0,
         }
     }
 }
@@ -115,7 +117,7 @@ impl BlockCatch {
             if self.block_spawn_timer == 0 {
                 self.block_spawn_timer = self.max_block_spawn_time;
 
-                self.blocks[self.blocks.len() - 1] = Some(Block::random(1..4, 4));
+                self.blocks[self.blocks.len() - 1] = Some(Block::random(1..4, 2));
             }
 
             self.difficulty_timer = self.difficulty_timer.saturating_sub(1);
@@ -129,6 +131,7 @@ impl BlockCatch {
                     Tile::Empty => (),
                     Tile::Collectible => {
                         block[player_position] = Tile::Empty;
+                        self.score += 1;
                     }
                     Tile::Wall => {
                         self.player_position = None;

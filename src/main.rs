@@ -7,6 +7,7 @@ pub mod input;
 pub mod lcd;
 pub mod rng;
 pub mod time;
+pub mod utils;
 
 use arduino_hal::{
     hal::port::{PB2, PB3, PB4, PD2, PD3, PD4, PD5},

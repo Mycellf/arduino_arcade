@@ -12,6 +12,8 @@ pub struct Game {
 
     pub overworld: Overworld,
     pub game_mode: GameMode,
+
+    pub high_scores: [u32; 7],
 }
 
 impl Default for Game {
@@ -21,6 +23,8 @@ impl Default for Game {
 
             overworld: Overworld::default(),
             game_mode: GameMode::Overworld,
+
+            high_scores: [0; 7],
         }
     }
 }
@@ -30,12 +34,21 @@ pub enum GameMode {
     BlockCatch(BlockCatch),
 }
 
+impl GameMode {
+    pub fn high_score_slot(&self) -> Option<u8> {
+        Some(match self {
+            GameMode::Overworld => return None,
+            GameMode::BlockCatch(_) => 0,
+        })
+    }
+}
+
 impl Game {
     pub const REPEAT_DELAY_FRAMES: i8 = 15;
 
     pub fn draw_full_screen(&mut self, lcd: &mut LCD) {
         match &mut self.game_mode {
-            GameMode::Overworld => self.overworld.draw_full_screen(lcd),
+            GameMode::Overworld => self.overworld.draw_full_screen(lcd, &self.high_scores),
             GameMode::BlockCatch(block_catch) => block_catch.draw_full_screen(lcd),
         }
     }
@@ -44,11 +57,21 @@ impl Game {
         let soft_input = self.update_soft_input(raw_input);
 
         let new_mode = match &mut self.game_mode {
-            GameMode::Overworld => self.overworld.update(lcd, raw_input, soft_input),
+            GameMode::Overworld => {
+                self.overworld
+                    .update(lcd, raw_input, soft_input, &self.high_scores)
+            }
             GameMode::BlockCatch(block_catch) => block_catch.update(lcd, raw_input),
         };
 
         if let Some(mode) = new_mode {
+            if let Some(slot) = self.game_mode.high_score_slot() {
+                let score = self.score();
+                let high_score = &mut self.high_scores[slot as usize];
+
+                *high_score = score.max(*high_score);
+            }
+
             self.game_mode = mode;
 
             self.draw_full_screen(lcd);
@@ -77,5 +100,16 @@ impl Game {
 
             0
         })
+    }
+
+    pub fn score(&self) -> u32 {
+        // let Some(slot) = self.game_mode.high_score_slot() else {
+        //     return 0;
+        // };
+
+        match &self.game_mode {
+            GameMode::Overworld => 0,
+            GameMode::BlockCatch(block_catch) => block_catch.score,
+        }
     }
 }

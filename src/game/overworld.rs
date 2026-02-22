@@ -1,6 +1,6 @@
 use crate::{
     game::{block_catch::BlockCatch, position::Position, GameMode},
-    LCD,
+    utils, LCD,
 };
 
 #[rustfmt::skip]
@@ -36,25 +36,31 @@ pub struct Overworld {
     pub screen: u8,
 
     pub player_position: Position,
+    pub score_length: Option<u8>,
 }
 
 impl Default for Overworld {
     fn default() -> Self {
         Self {
             screen: 0,
+
             player_position: Position::new(0, 0),
+            score_length: None,
         }
     }
 }
 
 impl Overworld {
     pub const PLAYER_CHARACTER: u8 = 0;
+    pub const SCORE_SYMBOLS: [u8; 7] = [2, b'W', b'?', b'?', b'?', b'?', b'?'];
 
-    pub fn draw_full_screen(&mut self, lcd: &mut LCD) {
+    pub fn draw_full_screen(&mut self, lcd: &mut LCD, scores: &[u32; 7]) {
         self.print_screen(lcd);
 
         lcd.set_cursor(self.player_position);
         lcd.write(Self::PLAYER_CHARACTER);
+
+        self.update_high_score_display(lcd, scores);
     }
 
     pub fn update(
@@ -62,14 +68,80 @@ impl Overworld {
         lcd: &mut LCD,
         _raw_input: [i8; 2],
         soft_input: [i8; 2],
+        scores: &[u32; 7],
     ) -> Option<GameMode> {
-        match self.move_player_by(lcd, soft_input) {
+        let old_position = self.player_position;
+
+        match self.move_player_by(lcd, soft_input, scores) {
             Some(b'1') => Some(GameMode::BlockCatch(BlockCatch::default())),
-            _ => None,
+            _ => 'outer: {
+                if self.player_position == old_position {
+                    break 'outer None;
+                }
+
+                if let Some(length) = self.score_length {
+                    self.score_length = None;
+                    lcd.set_cursor(old_position.nudge_column_saturating(-(length as i8)));
+                    let range = (old_position.column().saturating_sub(length)) as usize
+                        ..self.player_position.column() as usize;
+                    lcd.print_bytes(
+                        &ARCADE[self.screen as usize][old_position.row() as usize][range],
+                    );
+                }
+
+                self.update_high_score_display(lcd, scores);
+
+                None
+            }
         }
     }
 
-    pub fn move_player_by(&mut self, lcd: &mut LCD, input: [i8; 2]) -> Option<u8> {
+    pub fn update_high_score_display(&mut self, lcd: &mut LCD, scores: &[u32; 7]) {
+        let opposite_position = self
+            .player_position
+            .with_row(1 - self.player_position.row());
+
+        match self.get_tile_at(opposite_position) {
+            tile @ b'1'..=b'7' => {
+                self.draw_score(lcd, scores, tile - b'1');
+            }
+            _ => (),
+        }
+    }
+
+    pub fn draw_score(&mut self, lcd: &mut LCD, scores: &[u32; 7], slot: u8) {
+        let score = scores[slot as usize];
+        if score == 0 {
+            return;
+        }
+
+        let length = utils::num_digits(score) + 1;
+
+        let start = self
+            .player_position
+            .nudge_column_saturating(-(length as i8));
+
+        let actual_length = self.player_position.column() - start.column();
+
+        lcd.set_cursor(start);
+        lcd.write(Self::SCORE_SYMBOLS[slot as usize]);
+        if actual_length == length {
+            lcd.print(score);
+        } else {
+            for _ in 1..actual_length {
+                lcd.write(b'9');
+            }
+        }
+
+        self.score_length = Some(length);
+    }
+
+    pub fn move_player_by(
+        &mut self,
+        lcd: &mut LCD,
+        input: [i8; 2],
+        scores: &[u32; 7],
+    ) -> Option<u8> {
         let mut new_position = self.player_position;
 
         match input[0] {
@@ -82,7 +154,7 @@ impl Overworld {
                         // NOTE: We assume the target tile to be valid
                         self.screen += 1;
                         self.player_position = new_position.with_column(0);
-                        self.draw_full_screen(lcd);
+                        self.draw_full_screen(lcd, scores);
                         return None;
                     }
                 } else {
@@ -90,7 +162,7 @@ impl Overworld {
                         // NOTE: We assume the target tile to be valid
                         self.screen -= 1;
                         self.player_position = new_position.with_column(Position::MAX_COLUMN);
-                        self.draw_full_screen(lcd);
+                        self.draw_full_screen(lcd, scores);
                         return None;
                     }
                 }
