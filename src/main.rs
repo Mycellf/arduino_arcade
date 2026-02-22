@@ -3,6 +3,7 @@
 #![feature(abi_avr_interrupt)]
 
 pub mod game;
+pub mod input;
 pub mod lcd;
 pub mod time;
 
@@ -52,14 +53,16 @@ fn main() -> ! {
         info: LCDInfo::new(16, NumLines::Two, FontSize::Dots5x8),
     };
 
+    let dpad_right = pins.d7.into_pull_up_input();
+    let dpad_up = pins.d9.into_pull_up_input();
+    let dpad_left = pins.d6.into_pull_up_input();
+    let dpad_down = pins.d8.into_pull_up_input();
+
     lcd.begin();
 
     for (i, character) in CHARACTERS.iter().enumerate() {
         lcd.create_character(i as u8, character);
     }
-
-    lcd.set_cursor(0, 1);
-    lcd.print(TOTAL_FRAME_TIME_DEFICIT);
 
     let mut deficit = 0u8;
 
@@ -68,7 +71,10 @@ fn main() -> ! {
     loop {
         let start = time::millis();
 
-        game.update(&mut lcd);
+        game.update(
+            &mut lcd,
+            input::read_dpad_input(&dpad_right, &dpad_up, &dpad_left, &dpad_down),
+        );
 
         let frame_time = if deficit >= DEFICIT_NUMERATOR as u8 {
             FRAME_TIME_MILLISECONDS
