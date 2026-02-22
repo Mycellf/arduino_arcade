@@ -5,6 +5,12 @@ use crate::lcd::LCD;
 impl<RS: PinOps, RW: PinOps, E: PinOps, D4: PinOps, D5: PinOps, D6: PinOps, D7: PinOps>
     LCD<RS, RW, E, D4, D5, D6, D7>
 {
+    pub fn print_bytes(&mut self, bytes: &[u8]) {
+        for &byte in bytes {
+            self.write(byte);
+        }
+    }
+
     pub fn print(&mut self, value: impl Display) {
         let _ = write!(self.fmt(), "{value}");
     }

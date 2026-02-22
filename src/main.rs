@@ -5,15 +5,19 @@ pub mod characters;
 pub mod lcd;
 pub mod overworld;
 
+use arduino_hal::hal::port::{PB2, PB3, PB4, PD2, PD3, PD4, PD5};
 use panic_halt as _;
 
 use crate::{
     characters::CHARACTERS,
     lcd::{
         options::{FontSize, NumLines},
-        LCDInfo, LCD,
+        LCDInfo,
     },
 };
+
+/// That's too many to type out all the time
+pub type LCD = lcd::LCD<PB4, PB2, PB3, PD5, PD4, PD3, PD2>;
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -40,13 +44,7 @@ fn main() -> ! {
         lcd.create_character(i as u8, character);
     }
 
-    lcd.set_cursor(0, 0);
-    lcd.print("Hello world!");
-
-    lcd.set_cursor(4, 1);
-    for i in 0..8 {
-        lcd.write(i);
-    }
+    overworld::print_screen(&mut lcd, 0);
 
     loop {
         arduino_hal::delay_ms(1000);
