@@ -33,7 +33,7 @@ impl Default for Overworld {
 impl Overworld {
     pub const PLAYER_CHARACTER: u8 = 0;
 
-    pub fn start(&mut self, lcd: &mut LCD) {
+    pub fn draw_full_screen(&mut self, lcd: &mut LCD) {
         self.print_screen(lcd);
 
         lcd.set_cursor(self.player_position);
@@ -65,7 +65,7 @@ impl Overworld {
                         // NOTE: We assume the target tile to be valid
                         self.screen += 1;
                         self.player_position = new_position.with_column(0);
-                        self.start(lcd);
+                        self.draw_full_screen(lcd);
                         return None;
                     }
                 } else {
@@ -73,7 +73,7 @@ impl Overworld {
                         // NOTE: We assume the target tile to be valid
                         self.screen -= 1;
                         self.player_position = new_position.with_column(Position::MAX_COLUMN);
-                        self.start(lcd);
+                        self.draw_full_screen(lcd);
                         return None;
                     }
                 }
