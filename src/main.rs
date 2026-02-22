@@ -93,7 +93,7 @@ fn main() -> ! {
 
         if elapsed < frame_time {
             arduino_hal::delay_ms(frame_time - elapsed);
-        } else {
+        } else if elapsed > frame_time {
             uwriteln!(serial, "Frame too long: {}ms/{}ms", elapsed, frame_time).unwrap_infallible();
         }
     }
