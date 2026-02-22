@@ -61,7 +61,7 @@ impl Overworld {
                 if !edge {
                     new_position = pos;
                 } else if input == 1 {
-                    if self.screen < ARCADE.len() as u8 {
+                    if self.screen < ARCADE.len() as u8 - 1 {
                         // NOTE: We assume the target tile to be valid
                         self.screen += 1;
                         self.player_position = new_position.with_column(0);
