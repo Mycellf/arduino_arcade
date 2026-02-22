@@ -70,6 +70,7 @@ fn main() -> ! {
     let mut deficit = 0u8;
 
     let mut game = Game::default();
+    game.start(&mut lcd);
 
     loop {
         let start = time::millis();

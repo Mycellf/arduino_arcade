@@ -1,4 +1,4 @@
-use crate::LCD;
+use crate::{game::position::Position, LCD};
 
 #[rustfmt::skip]
 pub const ARCADE: [[&[u8]; 2]; 2] = [
@@ -12,9 +12,94 @@ pub const ARCADE: [[&[u8]; 2]; 2] = [
     ]
 ];
 
-pub fn print_screen(lcd: &mut LCD, screen: usize) {
-    for (i, line) in ARCADE[screen].iter().enumerate() {
-        lcd.set_cursor(0, i as u8);
-        lcd.print_bytes(line);
+pub struct Overworld {
+    pub screen: u8,
+
+    pub player_position: Position,
+}
+
+impl Default for Overworld {
+    fn default() -> Self {
+        Self {
+            screen: 0,
+            player_position: Position::new(0, 0),
+        }
+    }
+}
+
+impl Overworld {
+    pub const PLAYER_CHARACTER: u8 = 0;
+
+    pub fn start(&mut self, lcd: &mut LCD) {
+        self.print_screen(lcd);
+
+        lcd.set_cursor(self.player_position);
+        lcd.write(Self::PLAYER_CHARACTER);
+    }
+
+    pub fn update(&mut self, lcd: &mut LCD, _raw_input: [i8; 2], soft_input: [i8; 2]) {
+        self.move_player_by(lcd, soft_input);
+    }
+
+    pub fn move_player_by(&mut self, lcd: &mut LCD, input: [i8; 2]) -> Option<u8> {
+        let mut new_position = self.player_position;
+
+        match input[0] {
+            input @ (1 | -1) => {
+                let (pos, edge) = new_position.nudge_column_overflowing(input);
+                if !edge {
+                    new_position = pos;
+                } else if input == 1 {
+                    if self.screen < ARCADE.len() as u8 {
+                        // NOTE: We assume the target tile to be valid
+                        self.screen += 1;
+                        self.player_position = new_position.with_column(0);
+                        self.start(lcd);
+                        return None;
+                    }
+                } else {
+                    if self.screen > 0 {
+                        // NOTE: We assume the target tile to be valid
+                        self.screen -= 1;
+                        self.player_position = new_position.with_column(Position::MAX_COLUMN);
+                        self.start(lcd);
+                        return None;
+                    }
+                }
+            }
+            _ => (),
+        }
+
+        match input[1] {
+            1 => new_position = new_position.with_row(1),
+            -1 => new_position = new_position.with_row(0),
+            _ => (),
+        }
+
+        let target = self.get_tile_at(new_position);
+        if target != b' ' {
+            return Some(target);
+        }
+
+        lcd.set_cursor(self.player_position);
+        lcd.write(self.get_tile_at(self.player_position));
+
+        lcd.set_cursor(new_position);
+        lcd.write(Self::PLAYER_CHARACTER);
+
+        self.player_position = new_position;
+
+        None
+    }
+
+    pub fn get_tile_at(&self, position: Position) -> u8 {
+        ARCADE[self.screen as usize][position.row() as usize][position.column() as usize]
+    }
+
+    pub fn print_screen(&self, lcd: &mut LCD) {
+        for (i, line) in ARCADE[self.screen as usize].iter().enumerate() {
+            lcd.set_cursor(Position::new(0, i as u8));
+            lcd.print_bytes(line);
+        }
     }
 }

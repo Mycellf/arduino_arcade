@@ -7,9 +7,12 @@ pub mod options;
 use arduino_hal::port::{mode::Output, Pin, PinOps};
 use embedded_hal::digital::OutputPin;
 
-use crate::lcd::options::{
-    commands, BlinkEnabled, BusSize, CursorEnabled, DisplayEnabled, EntryDirection, EntryShift,
-    FontSize, NumLines, Register,
+use crate::{
+    game::position::Position,
+    lcd::options::{
+        commands, BlinkEnabled, BusSize, CursorEnabled, DisplayEnabled, EntryDirection, EntryShift,
+        FontSize, NumLines, Register,
+    },
 };
 
 pub struct LCD<RS: PinOps, RW: PinOps, E: PinOps, D4: PinOps, D5: PinOps, D6: PinOps, D7: PinOps> {
@@ -100,12 +103,12 @@ impl<RS: PinOps, RW: PinOps, E: PinOps, D4: PinOps, D5: PinOps, D6: PinOps, D7: 
         arduino_hal::delay_ms(2);
     }
 
-    pub fn set_cursor(&mut self, column: u8, row: u8) {
-        let row = row
-            .min(self.info.row_offsets.len() as u8 - 1)
-            .min(self.info.num_lines.as_count() - 1);
+    pub fn set_cursor(&mut self, position: Position) {
+        let row = position.row();
 
-        self.command(commands::SET_DDRAM_ADDRESS | (column + self.info.row_offsets[row as usize]));
+        self.command(
+            commands::SET_DDRAM_ADDRESS | (position.column() + self.info.row_offsets[row as usize]),
+        );
     }
 
     pub fn set_display_control(
