@@ -76,6 +76,14 @@ pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u8; 8]; N] {
         }
 
         character += 1;
+
+        if character % 8 == 0 {
+            assert!(
+                i >= file.len() || file[i] == b'\n',
+                "An empty line must follow every 8th character"
+            );
+            i += 1;
+        }
     }
 
     characters
