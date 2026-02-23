@@ -13,16 +13,16 @@ use crate::{
 
 pub struct Sokoban {
     pub level: [[Tile; 4]; 16],
-
     pub player_position: LevelPosition,
 }
 
 impl Default for Sokoban {
     fn default() -> Self {
-        Self {
-            level: decode_level(0),
+        let (player_position, level) = decode_level(0);
 
-            player_position: LevelPosition::new(0, 2),
+        Self {
+            level,
+            player_position,
         }
     }
 }
@@ -92,10 +92,10 @@ impl Tile {
 
 type LevelPosition = GenericPosition<2>;
 
-const LEVELS: [[u32; 4]; 1] = parse_characters(include_bytes!("sokoban.txt"));
+const LEVELS: [(LevelPosition, [u32; 4]); 1] = parse_level(include_bytes!("sokoban.txt"));
 
-pub fn decode_level(index: u8) -> [[Tile; 4]; 16] {
-    let level = &LEVELS[index as usize];
+pub fn decode_level(index: u8) -> (LevelPosition, [[Tile; 4]; 16]) {
+    let &(start, ref level) = &LEVELS[index as usize];
 
     let mut tiles = [[Tile::Empty; 4]; 16];
 
@@ -112,11 +112,11 @@ pub fn decode_level(index: u8) -> [[Tile; 4]; 16] {
         }
     }
 
-    tiles
+    (start, tiles)
 }
 
-pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u32; 4]; N] {
-    let mut characters = [[0u32; 4]; N];
+pub const fn parse_level<const N: usize>(file: &[u8]) -> [(LevelPosition, [u32; 4]); N] {
+    let mut level = [(LevelPosition::new(0, 0), [0u32; 4]); N];
     let mut i = 0;
 
     let mut character = 0;
@@ -134,6 +134,8 @@ pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u32; 4]; N] {
             i += 1;
         }
 
+        let mut start_position = None;
+
         // Read character
         let mut line_number = 0;
         while line_number < 4 {
@@ -142,7 +144,7 @@ pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u32; 4]; N] {
 
             // Read line
             let mut line = 0u32;
-            let mut length = 0;
+            let mut length = 0u32;
 
             loop {
                 let byte = file[i];
@@ -162,6 +164,13 @@ pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u32; 4]; N] {
                     b'z' => {
                         line <<= 2;
                         line |= 3;
+                    }
+                    b'p' => {
+                        assert!(
+                            start_position.is_none(),
+                            "Player position can only be defined once per level",
+                        );
+                        start_position = Some(LevelPosition::new(length as u8, line_number as u8));
                     }
                     b'|' => break,
                     b'\n' => panic!("Line must end with a `|`"),
@@ -184,13 +193,15 @@ pub const fn parse_characters<const N: usize>(file: &[u8]) -> [[u32; 4]; N] {
             );
             i += 1;
 
-            characters[character][line_number] = line;
+            level[character].1[line_number] = line;
 
             line_number += 1;
         }
 
+        level[character].0 = start_position.expect("Player start position must be defined");
+
         character += 1;
     }
 
-    characters
+    level
 }
