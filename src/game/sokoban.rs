@@ -12,11 +12,15 @@ use crate::{
     LCD,
 };
 
+const LEVELS: [(LevelPosition, [u32; 4]); 2] = parse_level(include_bytes!("sokoban.txt"));
+
 pub struct Sokoban {
     pub level: [[Tile; 4]; 16],
     pub player_position: LevelPosition,
 
     pub num_boxes: u8,
+
+    pub flash_timer: u8,
 }
 
 impl Default for Sokoban {
@@ -28,19 +32,40 @@ impl Default for Sokoban {
             player_position,
 
             num_boxes,
+
+            flash_timer: 0,
         }
     }
 }
 
 impl Sokoban {
+    pub const FLASH_PERIOD: u8 = 70;
+    pub const FLASH_LENGTH: u8 = 40;
+
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
         characters::load_character_set(lcd, 1);
 
+        self.update_all_tiles(lcd, |_, _| true);
+    }
+
+    pub fn update_all_tiles(&self, lcd: &mut LCD, mut condition: impl FnMut(Tile, Tile) -> bool) {
         for row in 0..2 {
             lcd.set_cursor(Position::new(0, row));
 
+            let mut cursor_valid = true;
+
             for column in 0..16 {
-                lcd.write(self.byte_of_tile(Position::new(column, row)));
+                let position = Position::new(column, row);
+                let [top, bottom] = self.pair_of_tile(position);
+                if condition(top, bottom) {
+                    if !cursor_valid {
+                        cursor_valid = true;
+                        lcd.set_cursor(position);
+                    }
+                    lcd.write(self.byte_of_pair(top, bottom));
+                } else {
+                    cursor_valid = false;
+                }
             }
         }
     }
@@ -51,6 +76,20 @@ impl Sokoban {
         _raw_input: [i8; 2],
         soft_input: [i8; 2],
     ) -> Option<GameMode> {
+        self.flash_timer = self.flash_timer.saturating_sub(1);
+        if self.flash_timer == 0 || self.flash_timer == Self::FLASH_LENGTH {
+            self.update_all_tiles(lcd, |top, bottom| {
+                top == Tile::Destination || bottom == Tile::Destination
+            });
+        }
+
+        if self.flash_timer == 0 {
+            self.flash_timer = Self::FLASH_PERIOD;
+            self.update_all_tiles(lcd, |top, bottom| {
+                top == Tile::Destination || bottom == Tile::Destination
+            });
+        }
+
         let moved = self.move_player(lcd, soft_input);
 
         if self.num_boxes == 0
@@ -122,12 +161,21 @@ impl Sokoban {
         lcd.write(self.byte_of_tile(position));
     }
 
-    pub fn byte_of_tile(&self, position: Position) -> u8 {
+    pub fn pair_of_tile(&self, position: Position) -> [Tile; 2] {
         let top_tile = LevelPosition::new(position.column(), position.row() * 2);
         let top = self[top_tile];
         let bottom = self[top_tile.with_row(top_tile.row() + 1)];
 
-        Tile::byte_of_pair(top, bottom)
+        [top, bottom]
+    }
+
+    pub fn byte_of_pair(&self, top: Tile, bottom: Tile) -> u8 {
+        Tile::byte_of_pair(top, bottom, self.flash_timer <= Self::FLASH_LENGTH)
+    }
+
+    pub fn byte_of_tile(&self, position: Position) -> u8 {
+        let [top, bottom] = self.pair_of_tile(position);
+        self.byte_of_pair(top, bottom)
     }
 }
 
@@ -164,25 +212,30 @@ pub enum TileDisplay {
 }
 
 impl Tile {
-    pub fn byte_of_pair(top: Self, bottom: Self) -> u8 {
-        let [top, bottom] = [top, bottom].map(Tile::display_kind);
+    pub fn byte_of_pair(top: Self, bottom: Self, flash: bool) -> u8 {
+        let [top, bottom] = [top, bottom].map(|tile| tile.display_kind(flash));
         (top as u8 * 3 + bottom as u8)
             .checked_sub(1)
             .unwrap_or(b' ')
     }
 
-    pub fn display_kind(self) -> TileDisplay {
+    pub fn display_kind(self, flash: bool) -> TileDisplay {
         match self {
             Tile::Empty => TileDisplay::Empty,
-            Tile::Box | Tile::Destination => TileDisplay::Dither,
+            Tile::Box => TileDisplay::Dither,
             Tile::Wall | Tile::Player | Tile::BoxOnDestination => TileDisplay::Full,
+            Tile::Destination => {
+                if flash {
+                    TileDisplay::Full
+                } else {
+                    TileDisplay::Dither
+                }
+            }
         }
     }
 }
 
 type LevelPosition = GenericPosition<2>;
-
-const LEVELS: [(LevelPosition, [u32; 4]); 1] = parse_level(include_bytes!("sokoban.txt"));
 
 pub fn decode_level(index: u8) -> (LevelPosition, [[Tile; 4]; 16], u8) {
     let &(start, ref level) = &LEVELS[index as usize];
