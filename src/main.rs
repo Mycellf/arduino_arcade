@@ -95,7 +95,7 @@ fn main() -> ! {
         deficit += 1;
         deficit %= DEFICIT_DENOMINATOR as u8;
 
-        let elapsed = time::millis() - start;
+        let elapsed = time::millis().wrapping_sub(start);
 
         if elapsed < frame_time {
             arduino_hal::delay_ms(frame_time - elapsed);
