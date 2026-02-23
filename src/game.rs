@@ -1,9 +1,9 @@
 use crate::{
-    black_jack::BlackJack,
-    game::{block_catch::BlockCatch, overworld::Overworld},
+    game::{black_jack::BlackJack, block_catch::BlockCatch, overworld::Overworld},
     LCD,
 };
 
+pub mod black_jack;
 pub mod block_catch;
 pub mod overworld;
 pub mod position;

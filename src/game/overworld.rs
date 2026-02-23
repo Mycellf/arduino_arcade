@@ -1,6 +1,5 @@
 use crate::{
-    black_jack::BlackJack,
-    game::{block_catch::BlockCatch, position::Position, GameMode},
+    game::{black_jack::BlackJack, block_catch::BlockCatch, position::Position, GameMode},
     utils, LCD,
 };
 
