@@ -80,6 +80,8 @@ impl Deck<52> {
             }
         }
 
+        assert_eq!(deck.len, 52);
+
         deck
     }
 }
