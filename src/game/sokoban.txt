@@ -8,31 +8,31 @@ Doubles:
 |p  # # x   z# x |
 |   xxz xx z## x |
 |   #z#   z###  z|
-Blank:
-|                |
-|p               |
-|                |
-|                |
-Blank:
-|                |
-|p               |
-|                |
-|                |
-Blank:
-|                |
-|p               |
-|                |
-|                |
-Blank:
-|                |
-|p               |
-|                |
-|                |
-Blank:
-|                |
-|p               |
-|                |
-|                |
+Switcharound:
+|   #       #    |
+|p x#    xxx  #  |
+|   #  #xzzz#    |
+|z     z         |
+Divergence:
+|  ###      # # z|
+|pxz             |
+| xz   ##xx # #  |
+|      z#        |
+Opposite:
+| #z  # z  z    #|
+|px          x   |
+| x  # z   # xx  |
+| #z x     #    z|
+Unopposite:
+| #z   #z      z#|
+|px      x  # xxz|
+| x  #   x  # x #|
+| #z   #z   #  z#|
+1337:
+|   # z## ### ###|
+|p ##  z#  xz   #|
+|   x   x   #  # |
+|   # xz# ### #  |
 Blank:
 |                |
 |p               |
