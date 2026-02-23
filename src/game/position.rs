@@ -51,4 +51,24 @@ impl<const ROW_BITS: u8> GenericPosition<ROW_BITS> {
                 || offset < 0 && self.column() < offset.abs_diff(0),
         )
     }
+
+    #[must_use]
+    pub const fn nudge_row_saturating(self, offset: i8) -> Self {
+        let new_row = self.row().saturating_add_signed(offset);
+
+        self.with_row(if new_row > Self::ROW_MASK {
+            Self::ROW_MASK
+        } else {
+            new_row
+        })
+    }
+
+    #[must_use]
+    pub const fn nudge_row_overflowing(self, offset: i8) -> (Self, bool) {
+        (
+            self.nudge_row_saturating(offset),
+            self.row().saturating_add_signed(offset) > Self::ROW_MASK
+                || offset < 0 && self.row() < offset.abs_diff(0),
+        )
+    }
 }

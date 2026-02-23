@@ -14,15 +14,19 @@ use crate::{
 pub struct Sokoban {
     pub level: [[Tile; 4]; 16],
     pub player_position: LevelPosition,
+
+    pub num_boxes: u8,
 }
 
 impl Default for Sokoban {
     fn default() -> Self {
-        let (player_position, level) = decode_level(0);
+        let (player_position, level, num_boxes) = decode_level(0);
 
         Self {
             level,
             player_position,
+
+            num_boxes,
         }
     }
 }
@@ -44,7 +48,74 @@ impl Sokoban {
         _raw_input: [i8; 2],
         soft_input: [i8; 2],
     ) -> Option<GameMode> {
-        None
+        let moved = self.move_player(lcd, soft_input);
+
+        if self.num_boxes == 0
+            || !moved && soft_input[0] == -1 && self.player_position.column() == 0
+        {
+            Some(GameMode::Overworld)
+        } else {
+            None
+        }
+    }
+
+    pub fn move_player(&mut self, lcd: &mut LCD, input: [i8; 2]) -> bool {
+        self.move_player_on_axis(lcd, LevelPosition::nudge_column_overflowing, input[0])
+            | self.move_player_on_axis(lcd, LevelPosition::nudge_row_overflowing, input[1])
+    }
+
+    pub fn move_player_on_axis(
+        &mut self,
+        lcd: &mut LCD,
+        mut nudge: impl FnMut(LevelPosition, i8) -> (LevelPosition, bool),
+        input: i8,
+    ) -> bool {
+        match input {
+            1 | -1 => 'outer: {
+                let (next_position, blocked) = nudge(self.player_position, input);
+                let next_tile = self[next_position];
+                if next_tile == Tile::Wall || blocked {
+                    break 'outer false;
+                }
+
+                if next_tile == Tile::Box {
+                    let (lookahead, lookahead_blocked) = nudge(self.player_position, input * 2);
+
+                    if lookahead_blocked {
+                        break 'outer false;
+                    }
+
+                    match self[lookahead] {
+                        Tile::Empty => self[lookahead] = Tile::Box,
+                        Tile::Destination => {
+                            self.num_boxes = self.num_boxes.saturating_sub(1);
+                            self[lookahead] = Tile::BoxOnDestination;
+                        }
+                        _ => break 'outer false,
+                    }
+
+                    self.draw_tile(lcd, lookahead);
+                }
+
+                let old_position = self.player_position;
+                self.player_position = next_position;
+
+                self[next_position] = Tile::Player;
+                self[old_position] = Tile::Empty;
+
+                self.draw_tile(lcd, next_position);
+                self.draw_tile(lcd, old_position);
+
+                true
+            }
+            _ => false,
+        }
+    }
+
+    pub fn draw_tile(&self, lcd: &mut LCD, tile_position: LevelPosition) {
+        let position = Position::new(tile_position.column(), tile_position.row() / 2);
+        lcd.set_cursor(position);
+        lcd.write(self.byte_of_tile(position));
     }
 
     pub fn byte_of_tile(&self, position: Position) -> u8 {
@@ -77,6 +148,8 @@ pub enum Tile {
     Wall,
     Box,
     Destination,
+    Player,
+    BoxOnDestination,
 }
 
 impl Tile {
@@ -94,10 +167,12 @@ type LevelPosition = GenericPosition<2>;
 
 const LEVELS: [(LevelPosition, [u32; 4]); 1] = parse_level(include_bytes!("sokoban.txt"));
 
-pub fn decode_level(index: u8) -> (LevelPosition, [[Tile; 4]; 16]) {
+pub fn decode_level(index: u8) -> (LevelPosition, [[Tile; 4]; 16], u8) {
     let &(start, ref level) = &LEVELS[index as usize];
 
     let mut tiles = [[Tile::Empty; 4]; 16];
+
+    let mut num_boxes = 0;
 
     for (row_index, &(mut row)) in level.iter().enumerate() {
         for column_index in (0..16).rev() {
@@ -109,10 +184,16 @@ pub fn decode_level(index: u8) -> (LevelPosition, [[Tile; 4]; 16]) {
             let tile = unsafe { mem::transmute::<u8, Tile>(tile_bits) };
 
             tiles[column_index][row_index] = tile;
+
+            if tile == Tile::Box {
+                num_boxes += 1;
+            }
         }
     }
 
-    (start, tiles)
+    tiles[start.column() as usize][start.row() as usize] = Tile::Player;
+
+    (start, tiles, num_boxes)
 }
 
 pub const fn parse_level<const N: usize>(file: &[u8]) -> [(LevelPosition, [u32; 4]); N] {
