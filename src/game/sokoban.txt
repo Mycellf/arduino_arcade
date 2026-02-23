@@ -3,6 +3,11 @@ Paths:
 |p  # #   x x x x|
 |   #x#x#        |
 |     x z        |
+Tension:
+|################|
+|p  x        z   |
+|   z        x   |
+|################|
 Doubles:
 |               z|
 |p  # # x   z# x |
@@ -13,11 +18,6 @@ Switcharound:
 |p x#    xxx  #  |
 |   #  #xzzz#    |
 |z     z         |
-Divergence:
-|  ###      # # z|
-|pxz             |
-| xz   ##xx # #  |
-|      z#        |
 Opposite:
 | #z  # z  z    #|
 |px          x   |
@@ -38,16 +38,16 @@ Haste:
 |p x#  #         |
 |   #  #z  # # x |
 |z     x        z|
-Blank:
-|                |
-|p               |
-|                |
-|                |
-Blank:
-|                |
-|p               |
-|                |
-|                |
+Divergence:
+|  ###      # # z|
+|pxz             |
+| xz   ##xx # #  |
+|      z#        |
+Bleeding edge:
+|   x z  #    z  |
+|p  z    xxxx    |
+|   z    #   #   |
+|   x z         z|
 Blank:
 |                |
 |p               |
