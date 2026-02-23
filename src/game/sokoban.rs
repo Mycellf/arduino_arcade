@@ -141,11 +141,15 @@ pub struct Level {
     pub num_boxes: u8,
 
     pub flash_timer: u8,
+
+    pub emergency_exit_timer: u16,
 }
 
 impl Level {
     pub const FLASH_PERIOD: u8 = 70;
     pub const FLASH_LENGTH: u8 = 40;
+
+    pub const EMERGENCY_EXIT_TIME: u16 = 60 * 10;
 
     fn load(level: u8) -> Self {
         let (player_position, level, num_boxes) = decode_level(level);
@@ -157,6 +161,8 @@ impl Level {
             num_boxes,
 
             flash_timer: 0,
+
+            emergency_exit_timer: 0,
         }
     }
 
@@ -188,12 +194,7 @@ impl Level {
         }
     }
 
-    pub fn update(
-        &mut self,
-        lcd: &mut LCD,
-        _raw_input: [i8; 2],
-        soft_input: [i8; 2],
-    ) -> Option<()> {
+    pub fn update(&mut self, lcd: &mut LCD, raw_input: [i8; 2], soft_input: [i8; 2]) -> Option<()> {
         self.flash_timer = self.flash_timer.saturating_sub(1);
         if self.flash_timer == 0 || self.flash_timer == Self::FLASH_LENGTH {
             self.update_all_tiles(lcd, |top, bottom| {
@@ -210,8 +211,15 @@ impl Level {
 
         let moved = self.move_player(lcd, soft_input);
 
+        if moved || raw_input != [0, 1] {
+            self.emergency_exit_timer = 0;
+        } else {
+            self.emergency_exit_timer += 1;
+        }
+
         if self.num_boxes == 0
             || !moved && soft_input[0] == -1 && self.player_position.column() == 0
+            || self.emergency_exit_timer >= Self::EMERGENCY_EXIT_TIME
         {
             characters::load_character_set(lcd, 0);
             Some(())
