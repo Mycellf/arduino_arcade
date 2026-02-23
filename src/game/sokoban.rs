@@ -78,7 +78,7 @@ impl Sokoban {
             1 | -1 => 'outer: {
                 let (next_position, blocked) = nudge(self.player_position, input);
                 let next_tile = self[next_position];
-                if next_tile == Tile::Wall || blocked {
+                if !matches!(next_tile, Tile::Empty | Tile::Box) || blocked {
                     break 'outer false;
                 }
 
