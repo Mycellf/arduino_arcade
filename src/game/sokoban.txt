@@ -8,3 +8,68 @@ Doubles:
 |p  # #          |
 |   xxz xx       |
 |   #z#   zz     |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |
+Blank:
+|                |
+|p               |
+|                |
+|                |

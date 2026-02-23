@@ -12,9 +12,129 @@ use crate::{
     LCD,
 };
 
-const LEVELS: [(LevelPosition, [u32; 4]); 2] = parse_level(include_bytes!("sokoban.txt"));
+const LEVELS: [(LevelPosition, [u32; 4]); 15] = parse_levels(include_bytes!("sokoban.txt"));
 
 pub struct Sokoban {
+    pub level_select: LevelSelect,
+    pub level: Option<Level>,
+}
+
+impl Sokoban {
+    pub fn draw_full_screen(&self, lcd: &mut LCD) {
+        if let Some(level) = &self.level {
+            level.draw_full_screen(lcd);
+        } else {
+            self.level_select.draw_full_screen(lcd);
+        }
+    }
+
+    pub fn update(
+        &mut self,
+        lcd: &mut LCD,
+        raw_input: [i8; 2],
+        soft_input: [i8; 2],
+    ) -> Option<GameMode> {
+        if let Some(level) = &mut self.level {
+            if let Some(_) = level.update(lcd, raw_input, soft_input) {
+                self.level = None;
+                self.level_select.draw_full_screen(lcd);
+            }
+
+            None
+        } else if let Some(selection) = self.level_select.update(lcd, raw_input, soft_input) {
+            match selection {
+                LevelSelection::Exit => Some(GameMode::Overworld),
+                LevelSelection::PlayLevel(level) => {
+                    let level = Level::load(level);
+                    level.draw_full_screen(lcd);
+                    self.level = Some(level);
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    }
+}
+
+impl Default for Sokoban {
+    fn default() -> Self {
+        Self {
+            level_select: LevelSelect::default(),
+            level: None,
+        }
+    }
+}
+
+pub struct LevelSelect {
+    pub player_position: Position,
+}
+
+pub enum LevelSelection {
+    Exit,
+    PlayLevel(u8),
+}
+
+impl Default for LevelSelect {
+    fn default() -> Self {
+        Self {
+            player_position: Position::new(0, 1),
+        }
+    }
+}
+
+impl LevelSelect {
+    pub const PLAYER_CHARACTER: u8 = 0;
+
+    pub fn draw_full_screen(&self, lcd: &mut LCD) {
+        lcd.clear();
+        lcd.set_cursor(Position::new(0, 0));
+        lcd.print_bytes(b"\x7f123456789ABCDEF");
+
+        lcd.set_cursor(self.player_position);
+        lcd.write(Self::PLAYER_CHARACTER);
+    }
+
+    pub fn update(
+        &mut self,
+        lcd: &mut LCD,
+        _raw_input: [i8; 2],
+        soft_input: [i8; 2],
+    ) -> Option<LevelSelection> {
+        match soft_input[0] {
+            input @ (1 | -1) => {
+                let (new_position, blocked) = self.player_position.nudge_column_overflowing(input);
+
+                if blocked {
+                    if input == -1 {
+                        return Some(LevelSelection::Exit);
+                    }
+                } else {
+                    lcd.set_cursor(self.player_position);
+                    lcd.write(b' ');
+
+                    lcd.set_cursor(new_position);
+                    lcd.write(Self::PLAYER_CHARACTER);
+
+                    self.player_position = new_position;
+                }
+            }
+            _ => (),
+        }
+
+        if soft_input[1] == -1 {
+            return Some(if self.player_position.column() > 0 {
+                LevelSelection::PlayLevel(self.player_position.column() - 1)
+            } else {
+                LevelSelection::Exit
+            });
+        }
+
+        None
+    }
+}
+
+pub struct Level {
     pub level: [[Tile; 4]; 16],
     pub player_position: LevelPosition,
 
@@ -23,9 +143,12 @@ pub struct Sokoban {
     pub flash_timer: u8,
 }
 
-impl Default for Sokoban {
-    fn default() -> Self {
-        let (player_position, level, num_boxes) = decode_level(0);
+impl Level {
+    pub const FLASH_PERIOD: u8 = 70;
+    pub const FLASH_LENGTH: u8 = 40;
+
+    fn load(level: u8) -> Self {
+        let (player_position, level, num_boxes) = decode_level(level);
 
         Self {
             level,
@@ -36,11 +159,6 @@ impl Default for Sokoban {
             flash_timer: 0,
         }
     }
-}
-
-impl Sokoban {
-    pub const FLASH_PERIOD: u8 = 70;
-    pub const FLASH_LENGTH: u8 = 40;
 
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
         characters::load_character_set(lcd, 1);
@@ -75,7 +193,7 @@ impl Sokoban {
         lcd: &mut LCD,
         _raw_input: [i8; 2],
         soft_input: [i8; 2],
-    ) -> Option<GameMode> {
+    ) -> Option<()> {
         self.flash_timer = self.flash_timer.saturating_sub(1);
         if self.flash_timer == 0 || self.flash_timer == Self::FLASH_LENGTH {
             self.update_all_tiles(lcd, |top, bottom| {
@@ -96,7 +214,7 @@ impl Sokoban {
             || !moved && soft_input[0] == -1 && self.player_position.column() == 0
         {
             characters::load_character_set(lcd, 0);
-            Some(GameMode::Overworld)
+            Some(())
         } else {
             None
         }
@@ -179,7 +297,7 @@ impl Sokoban {
     }
 }
 
-impl Index<LevelPosition> for Sokoban {
+impl Index<LevelPosition> for Level {
     type Output = Tile;
 
     fn index(&self, index: LevelPosition) -> &Self::Output {
@@ -187,7 +305,7 @@ impl Index<LevelPosition> for Sokoban {
     }
 }
 
-impl IndexMut<LevelPosition> for Sokoban {
+impl IndexMut<LevelPosition> for Level {
     fn index_mut(&mut self, index: LevelPosition) -> &mut Self::Output {
         &mut self.level[index.column() as usize][index.row() as usize]
     }
@@ -266,7 +384,7 @@ pub fn decode_level(index: u8) -> (LevelPosition, [[Tile; 4]; 16], u8) {
     (start, tiles, num_boxes)
 }
 
-pub const fn parse_level<const N: usize>(file: &[u8]) -> [(LevelPosition, [u32; 4]); N] {
+pub const fn parse_levels<const N: usize>(file: &[u8]) -> [(LevelPosition, [u32; 4]); N] {
     let mut level = [(LevelPosition::new(0, 0), [0u32; 4]); N];
     let mut i = 0;
 
