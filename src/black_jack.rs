@@ -1,6 +1,132 @@
 use core::{mem, num::NonZeroU8};
 
-use crate::{game::position::Position, utils::List, LCD};
+use crate::{
+    game::{position::Position, GameMode},
+    utils::List,
+    LCD,
+};
+
+pub struct BlackJack {
+    pub table: [Option<Card>; Self::TABLE_WIDTH as usize],
+
+    pub num_player_cards: u8,
+    pub player_points: u8,
+
+    pub num_dealer_cards: u8,
+    pub dealer_points: u8,
+
+    pub player_position: u8,
+
+    pub deck: Deck<52>,
+}
+
+impl Default for BlackJack {
+    fn default() -> Self {
+        Self {
+            table: [None; Self::TABLE_WIDTH as usize],
+
+            num_player_cards: 0,
+            player_points: 0,
+
+            num_dealer_cards: 0,
+            dealer_points: 0,
+
+            player_position: 0,
+
+            deck: Deck::full(),
+        }
+    }
+}
+
+const _: () = assert!(BlackJack::MAXIMUM_CARDS <= 52);
+
+impl BlackJack {
+    pub const PLAYER_CHARACTER: u8 = 0;
+
+    pub const TABLE_WIDTH: u8 = 12;
+    pub const MAXIMUM_CARDS: u8 = Self::TABLE_WIDTH - 1;
+
+    pub const TABLE_START_COLUMN: u8 = 4;
+
+    pub fn draw_full_screen(&self, lcd: &mut LCD) {
+        lcd.clear();
+
+        lcd.set_cursor(Position::new(self.player_position, 0));
+        lcd.write(Self::PLAYER_CHARACTER);
+        lcd.set_cursor(Position::new(0, 1));
+        lcd.print_bytes(b"HS");
+    }
+
+    pub fn update(
+        &mut self,
+        lcd: &mut LCD,
+        _raw_input: [i8; 2],
+        soft_input: [i8; 2],
+    ) -> Option<GameMode> {
+        match soft_input[0] {
+            1 => self.set_player_position(lcd, 1),
+            -1 => self.set_player_position(lcd, 0),
+            _ => (),
+        }
+
+        None
+    }
+
+    pub fn set_player_position(&mut self, lcd: &mut LCD, position: u8) {
+        if self.player_position == position {
+            return;
+        }
+
+        lcd.set_cursor(Position::new(self.player_position, 0));
+        lcd.write(b' ');
+        if self.player_position + 1 != position {
+            lcd.set_cursor(Position::new(position, 0));
+        }
+        lcd.write(Self::PLAYER_CHARACTER);
+
+        self.player_position = position;
+    }
+
+    pub fn table_full(&mut self) -> bool {
+        self.num_player_cards + self.num_dealer_cards >= Self::MAXIMUM_CARDS
+    }
+
+    pub fn add_player_card(&mut self, lcd: &mut LCD) -> Option<()> {
+        if self.table_full() {
+            return None;
+        }
+
+        let card = self.deck.remove_random().unwrap();
+
+        let index = self.num_player_cards;
+        card.draw_at(lcd, index + Self::TABLE_START_COLUMN);
+        self.table[index as usize] = Some(card);
+
+        self.num_player_cards += 1;
+
+        Some(())
+    }
+
+    pub fn add_dealer_card(&mut self, lcd: &mut LCD) -> Option<()> {
+        if self.table_full() {
+            return None;
+        }
+
+        let card = self.deck.remove_random().unwrap();
+
+        self.num_dealer_cards += 1;
+
+        let index = Self::TABLE_WIDTH - self.num_dealer_cards;
+        card.draw_at(lcd, index + Self::TABLE_START_COLUMN);
+        self.table[index as usize] = Some(card);
+
+        Some(())
+    }
+
+    pub fn player_won(&self) -> bool {
+        self.player_points > self.dealer_points
+    }
+}
 
 pub type Deck<const N: usize> = List<Card, N>;
 

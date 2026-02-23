@@ -1,4 +1,5 @@
 use crate::{
+    black_jack::BlackJack,
     game::{block_catch::BlockCatch, overworld::Overworld},
     LCD,
 };
@@ -32,6 +33,7 @@ impl Default for Game {
 pub enum GameMode {
     Overworld,
     BlockCatch(BlockCatch),
+    BlackJack(BlackJack),
 }
 
 impl GameMode {
@@ -39,6 +41,7 @@ impl GameMode {
         Some(match self {
             GameMode::Overworld => return None,
             GameMode::BlockCatch(_) => 0,
+            GameMode::BlackJack(_) => 1,
         })
     }
 }
@@ -50,6 +53,7 @@ impl Game {
         match &mut self.game_mode {
             GameMode::Overworld => self.overworld.draw_full_screen(lcd, &self.high_scores),
             GameMode::BlockCatch(block_catch) => block_catch.draw_full_screen(lcd),
+            GameMode::BlackJack(black_jack) => black_jack.draw_full_screen(lcd),
         }
     }
 
@@ -62,6 +66,7 @@ impl Game {
                     .update(lcd, raw_input, soft_input, &self.high_scores)
             }
             GameMode::BlockCatch(block_catch) => block_catch.update(lcd, raw_input),
+            GameMode::BlackJack(black_jack) => black_jack.update(lcd, raw_input, soft_input),
         };
 
         if let Some(mode) = new_mode {
@@ -103,13 +108,20 @@ impl Game {
     }
 
     pub fn score(&self) -> u32 {
-        // let Some(slot) = self.game_mode.high_score_slot() else {
-        //     return 0;
-        // };
+        let Some(slot) = self.game_mode.high_score_slot() else {
+            return 0;
+        };
 
         match &self.game_mode {
             GameMode::Overworld => 0,
             GameMode::BlockCatch(block_catch) => block_catch.score,
+            GameMode::BlackJack(black_jack) => {
+                if black_jack.player_won() {
+                    self.high_scores[slot as usize] + 1
+                } else {
+                    0
+                }
+            }
         }
     }
 }
