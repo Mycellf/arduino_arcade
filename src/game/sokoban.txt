@@ -3,7 +3,7 @@ Paths:
 |p  # #   x x x x|
 |   #x#x#        |
 |     x z        |
-Carbon copy:
+Carbon Copy:
 |################|
 |p  x        z   |
 |   z        x   |
@@ -43,7 +43,7 @@ Divergence:
 |pxz             |
 | xz   ##xx # #  |
 |      z#        |
-Bleeding edge:
+Bleeding Edge:
 |   x z  #    z  |
 |p  z    xxxx    |
 |   z    #   #   |
