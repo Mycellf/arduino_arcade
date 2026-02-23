@@ -9,7 +9,7 @@ impl Deck<52> {
         let mut deck = Self::new();
 
         for suit_bits in 1..4 + 1 {
-            for number_bits in (0x00..0xd0 + 0x10).step_by(0x10) {
+            for number_bits in (0x00..0xc0 + 0x10).step_by(0x10) {
                 deck.insert(unsafe { Card::from_bits_unchecked(number_bits | suit_bits) })
                     .unwrap();
             }
@@ -58,19 +58,18 @@ impl Card {
 #[repr(u8)]
 pub enum Number {
     Ace = 0x00,
-    Number1 = 0x10,
-    Number2 = 0x20,
-    Number3 = 0x30,
-    Number4 = 0x40,
-    Number5 = 0x50,
-    Number6 = 0x60,
-    Number7 = 0x70,
-    Number8 = 0x80,
-    Number9 = 0x90,
-    Number10 = 0xa0,
-    Jack = 0xb0,
-    Queen = 0xc0,
-    King = 0xd0,
+    Number2 = 0x10,
+    Number3 = 0x20,
+    Number4 = 0x30,
+    Number5 = 0x40,
+    Number6 = 0x50,
+    Number7 = 0x60,
+    Number8 = 0x70,
+    Number9 = 0x80,
+    Number10 = 0x90,
+    Jack = 0xa0,
+    Queen = 0xb0,
+    King = 0xc0,
 }
 
 /// NOTE: Only occupies the 4 least significant bits
@@ -87,7 +86,6 @@ impl Number {
     pub fn character(self) -> u8 {
         match self {
             Number::Ace => b'A',
-            Number::Number1 => b'1',
             Number::Number2 => b'2',
             Number::Number3 => b'3',
             Number::Number4 => b'4',
