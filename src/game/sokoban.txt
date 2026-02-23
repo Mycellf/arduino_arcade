@@ -39,7 +39,7 @@ Haste:
 |   #  #z  # # x |
 |z     x        z|
 Divergence:
-|  ###      # # z|
+|  ####     # # z|
 |pxz             |
 | xz   ##xx # #  |
 |      z#        |
