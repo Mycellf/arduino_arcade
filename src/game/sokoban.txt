@@ -3,7 +3,7 @@ Start:
 |p x    #       #|
 |  x#       ##  z|
 |   #   #   #####|
-Spiral:
+Doubles:
 |                |
 |p  # #          |
 |   xxz xx       |
