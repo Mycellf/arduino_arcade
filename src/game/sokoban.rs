@@ -460,7 +460,7 @@ pub const fn parse_levels<const N: usize>(file: &[u8]) -> [(LevelPosition, [u32;
             }
             assert!(
                 length == 16,
-                "Line must contain 5 characters between the `|`s"
+                "Line must contain 16 characters between the `|`s"
             );
 
             assert!(file[i] == b'|', "Line must end with a `|`");
