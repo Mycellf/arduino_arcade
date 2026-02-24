@@ -67,7 +67,7 @@ impl IndexMut<Position> for Block {
 #[repr(u8)]
 pub enum Tile {
     Empty = 0x05,
-    Collectible = 0x02,
+    Collectible = 0x06,
     Wall = 0xff,
 }
 
@@ -102,8 +102,9 @@ impl BlockCatch {
 
         if self.player_position.is_none() {
             lcd.set_cursor(Position::new(2, 0));
-            uwrite!(lcd.fmt(), "Score: {}", self.score).unwrap_infallible();
-            for _ in 7 + utils::num_digits(self.score)..16 {
+            lcd.print_bytes(b"Score: \x06");
+            uwrite!(lcd.fmt(), "{}", self.score).unwrap_infallible();
+            for _ in 8 + utils::num_digits(self.score)..16 {
                 lcd.write(b' ');
             }
         }
@@ -313,8 +314,7 @@ impl Block {
 impl Tile {
     pub fn marker_tile(self) -> u8 {
         match self {
-            Tile::Empty => 0x05,
-            Tile::Collectible => 0x06,
+            Tile::Empty | Tile::Collectible => 0x05,
             Tile::Wall => b' ',
         }
     }
