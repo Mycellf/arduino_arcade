@@ -85,7 +85,9 @@ impl SpaceShooter {
         match *target {
             Some(Object::Asteroid2X) => *target = Some(Object::Asteroid),
             Some(Object::Asteroid) => *target = None,
-            Some(Object::Projectile) => match object {
+            Some(
+                Object::Projectile | Object::TripleProjectile | Object::Beam | Object::BeamDecay,
+            ) => match object {
                 Some(Object::Asteroid2X) => *target = Some(Object::Asteroid),
                 Some(Object::Asteroid) => *target = None,
                 _ => (),
@@ -178,7 +180,7 @@ impl SpaceShooter {
     pub fn update_row(&mut self, lcd: &mut LCD, row: usize) {
         let mut i = 0;
         while i < self.objects[row].len() as u8 {
-            let Some(object) = self.objects[row][i as usize].take() else {
+            let Some(mut object) = self.objects[row][i as usize].take() else {
                 i += 1;
                 continue;
             };
@@ -186,9 +188,18 @@ impl SpaceShooter {
             lcd.write(b' ');
 
             let next_position = match object {
-                Object::Projectile => {
-                    while self.objects[row].get(i as usize).copied().flatten()
-                        == Some(Object::Projectile)
+                Object::BeamPowerUpStored | Object::TripleShotPowerUpStored => Some(i),
+                Object::Beam => {
+                    object = Object::BeamDecay;
+                    Some(i)
+                }
+                Object::BeamDecay => None,
+                Object::Projectile | Object::TripleProjectile => {
+                    while self.objects[row]
+                        .get(i as usize)
+                        .copied()
+                        .flatten()
+                        .is_some_and(Object::is_projectile)
                     {
                         i += 1;
                     }
@@ -202,7 +213,7 @@ impl SpaceShooter {
                 let success =
                     self.set_object(lcd, Position::new(next_position, row as u8), Some(object));
 
-                if success && object == Object::Projectile {
+                if success && object.is_projectile() {
                     i += 1;
                 }
             }
@@ -231,9 +242,18 @@ pub enum Object {
     Asteroid2X = 0xff,
     Asteroid = 0x01,
     Projectile = b'-',
+    TripleProjectile = b'>',
+    Beam = 0xb0, // Looks the same as b'-'
+    BeamDecay = b'=',
     Health = b'+',
     BeamPowerUpCollectible = 0x03,
-    BeamPowerUpStored = 0x0b,
+    BeamPowerUpStored = 0x0b, // Looks the same as 0x03
     TripleShotPowerUpCollectible = 0x04,
-    TripleShotPowerUpStored = 0x0c,
+    TripleShotPowerUpStored = 0x0c, // Looks the same as 0x03
+}
+
+impl Object {
+    pub fn is_projectile(self) -> bool {
+        matches!(self, Object::Projectile | Object::TripleProjectile)
+    }
 }
