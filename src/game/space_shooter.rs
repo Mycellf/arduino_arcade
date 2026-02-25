@@ -3,7 +3,7 @@ use core::ops::{Index, IndexMut};
 use crate::{
     game::{position::Position, GameMode},
     lcd::characters,
-    LCD,
+    rng, LCD,
 };
 
 pub struct SpaceShooter {
@@ -14,6 +14,9 @@ pub struct SpaceShooter {
     pub shoot_row: Option<u8>,
     pub shoot_released: u8,
     pub shoot_cooldown: i8,
+
+    pub spawn_cooldown: u8,
+
     pub update_cooldown: u8,
 
     pub objects: [[Option<Object>; 16]; 2],
@@ -25,12 +28,15 @@ impl Default for SpaceShooter {
     fn default() -> Self {
         Self {
             ship_position: Position::new(1, 0),
-            ship_health: 1,
+            ship_health: 3,
             ship_health_flash_time: 0,
 
             shoot_row: None,
             shoot_released: u8::MAX,
             shoot_cooldown: 0,
+
+            spawn_cooldown: 0,
+
             update_cooldown: 0,
 
             objects: [[None; 16]; 2],
@@ -46,6 +52,12 @@ impl SpaceShooter {
     pub const PLAYER_SHOOT_COOLDOWN: u8 = 3;
 
     pub const UPDATE_COOLDOWN: u8 = 20;
+    pub const SHIP_HEALTH_FLASH_TIME: u8 = 60;
+
+    pub const MIN_TIME: u8 = 2;
+    pub const MAX_TIME: u8 = 5;
+
+    pub const DOUBLE_SPAWN_CHANCE: u8 = (80u16 * 255 / 100) as u8;
 
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
         characters::load_character_set(lcd, 2);
@@ -129,10 +141,42 @@ impl SpaceShooter {
                 self.update_row(lcd, i);
             }
 
+            if self.spawn_cooldown > 0 {
+                self.spawn_cooldown -= 1;
+            } else {
+                self.spawn_cooldown = Self::MIN_TIME.saturating_sub(1)
+                    + (rng::rng() % (1 + Self::MAX_TIME - Self::MIN_TIME) as u32) as u8;
+
+                let row = rng::rng() as u8 & 1;
+                self.set_object(
+                    lcd,
+                    Position::new(self.objects[0].len() as u8 - 1, row),
+                    Some(Object::random()),
+                );
+
+                if (rng::rng() as u8) < Self::DOUBLE_SPAWN_CHANCE {
+                    self.set_object(
+                        lcd,
+                        Position::new(self.objects[0].len() as u8 - 1, 1 - row),
+                        Some(Object::random()),
+                    );
+                }
+            }
+
+            self.update_ship_collision(lcd);
+
             self.update_ship_shooting(lcd, raw_input);
-            self.shoot_row = None;
 
             self.update_cooldown = Self::UPDATE_COOLDOWN.saturating_sub(1);
+        }
+
+        if self.ship_health_flash_time > 0 {
+            self.ship_health_flash_time -= 1;
+
+            if self.ship_health_flash_time == 0 {
+                lcd.set_cursor(self.ship_position);
+                lcd.write(Self::PLAYER_CHARACTER);
+            }
         }
 
         None
@@ -152,6 +196,8 @@ impl SpaceShooter {
         lcd.write(Self::PLAYER_CHARACTER);
 
         self.ship_position = new_position;
+
+        self.update_ship_collision(lcd);
     }
 
     pub fn update_ship_shooting(&mut self, lcd: &mut LCD, raw_input: [i8; 2]) {
@@ -163,6 +209,8 @@ impl SpaceShooter {
         if !(raw_input[0] == 1 || self.shoot_row.is_some() || self.shoot_cooldown < 0) {
             return;
         }
+
+        self.shoot_row = None;
 
         let row = self.shoot_row.unwrap_or(self.ship_position.row());
 
@@ -220,6 +268,44 @@ impl SpaceShooter {
             i += 1;
         }
     }
+
+    pub fn update_ship_collision(&mut self, lcd: &mut LCD) {
+        let position = self.ship_position;
+        let Some(object) = self[position].take() else {
+            return;
+        };
+
+        match object {
+            Object::Asteroid2X | Object::Asteroid => {
+                if self.ship_health_flash_time == 0 {
+                    self.ship_health = self.ship_health.saturating_sub(1);
+                    self.ship_health_flash_time = Self::SHIP_HEALTH_FLASH_TIME;
+                }
+            }
+            Object::Health => {
+                if self.ship_health < 9 {
+                    self.ship_health += 1;
+                }
+                self.ship_health_flash_time = Self::SHIP_HEALTH_FLASH_TIME;
+            }
+            Object::BeamPowerUpCollectible | Object::TripleShotPowerUpCollectible => {
+                let position = self.ship_position.with_column(0);
+                self[position] = None;
+                self.set_object(lcd, position, object.into_stored_power_up());
+            }
+            Object::Point => {
+                self.score += 1;
+            }
+            _ => (),
+        }
+
+        lcd.set_cursor(self.ship_position);
+        lcd.write(if self.ship_health_flash_time == 0 {
+            Self::PLAYER_CHARACTER
+        } else {
+            b'0' + self.ship_health.min(9)
+        });
+    }
 }
 
 impl Index<Position> for SpaceShooter {
@@ -246,14 +332,44 @@ pub enum Object {
     Beam = 0xb0, // Looks the same as b'-'
     BeamDecay = b'=',
     Health = b'+',
-    BeamPowerUpCollectible = 0x03,
-    BeamPowerUpStored = 0x0b, // Looks the same as 0x03
-    TripleShotPowerUpCollectible = 0x04,
-    TripleShotPowerUpStored = 0x0c, // Looks the same as 0x03
+    Point = 0x04,
+    BeamPowerUpCollectible = 0x02,
+    BeamPowerUpStored = 0x0a, // Looks the same as 0x03
+    TripleShotPowerUpCollectible = 0x03,
+    TripleShotPowerUpStored = 0x0b, // Looks the same as 0x03
 }
 
 impl Object {
+    pub fn random() -> Self {
+        match rng::rng() % 100 {
+            100.. => unreachable!(),
+            ..60 => Object::Asteroid,
+            ..75 => Object::Asteroid2X,
+            ..85 => Object::Point,
+            ..90 => Object::Health,
+            ..95 => Object::BeamPowerUpCollectible,
+            ..100 => Object::TripleShotPowerUpCollectible,
+        }
+    }
+
     pub fn is_projectile(self) -> bool {
         matches!(self, Object::Projectile | Object::TripleProjectile)
+    }
+
+    pub fn into_stored_power_up(self) -> Option<Object> {
+        Some(match self {
+            Object::BeamPowerUpCollectible | Object::BeamPowerUpStored => Object::BeamPowerUpStored,
+            Object::TripleShotPowerUpCollectible | Object::TripleShotPowerUpStored => {
+                Object::TripleShotPowerUpStored
+            }
+            _ => return None,
+        })
+    }
+
+    pub fn is_stored_power_up(self) -> bool {
+        matches!(
+            self,
+            Object::BeamPowerUpStored | Object::TripleShotPowerUpStored
+        )
     }
 }
