@@ -4,10 +4,10 @@ Paths:
 |   #x#x#      z |
 |     x z        |
 Carbon Copy:
-|################|
-|p  x        z   |
+|   x        z   |
+|p  #        #   |
+|   #        #   |
 |   z        x   |
-|################|
 Switcharound:
 |   #       #    |
 |p x#    xxx  #  |
