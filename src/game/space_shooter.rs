@@ -428,7 +428,7 @@ impl Object {
             100.. => unreachable!(),
             ..60 => Object::Asteroid,
             ..75 => Object::Asteroid2X,
-            ..90 => Object::Point,
+            ..93 => Object::Point,
             ..95 => Object::Health,
             ..98 => Object::BeamPowerUpCollectible,
             ..100 => Object::TripleShotPowerUpCollectible,
