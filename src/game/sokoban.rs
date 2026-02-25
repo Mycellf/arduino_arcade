@@ -170,14 +170,14 @@ pub struct Level {
 
     pub flash_timer: u8,
 
-    pub emergency_exit_timer: u16,
+    pub emergency_exit_timer: u8,
 }
 
 impl Level {
     pub const FLASH_PERIOD: u8 = 70;
     pub const FLASH_LENGTH: u8 = 40;
 
-    pub const EMERGENCY_EXIT_TIME: u16 = 60 * 10;
+    pub const EMERGENCY_EXIT_TIME: u8 = 60 * 4;
 
     fn load(level: u8) -> Self {
         let (player_position, level, num_boxes) = decode_level(level);
