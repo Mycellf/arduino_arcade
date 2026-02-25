@@ -167,8 +167,10 @@ impl SpaceShooter {
                 let row = self.ship_position.row();
                 self.shoot_row = Some(row);
 
-                if self.shoot_cooldown == 0 {
-                    lcd.set_cursor(Position::new(2, row));
+                let position = Position::new(2, row);
+
+                if self.shoot_cooldown == 0 && self[position].is_none() {
+                    lcd.set_cursor(position);
                     lcd.write(if self.triple_shot_cooldown == 0 {
                         Object::Projectile
                     } else {
@@ -185,6 +187,8 @@ impl SpaceShooter {
         if self.update_cooldown > 0 {
             self.update_cooldown -= 1;
         } else {
+            self.update_ship_shooting(lcd, raw_input);
+
             for i in 0..self.objects.len() {
                 self.update_row(lcd, i);
             }
@@ -192,8 +196,6 @@ impl SpaceShooter {
             self.spawn_objects(lcd);
 
             self.update_ship_collision(lcd);
-
-            self.update_ship_shooting(lcd, raw_input);
 
             if self.triple_shot_cooldown > 0 {
                 self.triple_shot_cooldown -= 1;
@@ -316,12 +318,8 @@ impl SpaceShooter {
                         i += 1;
                     }
                     let next_position = i;
+                    let max_position = self.objects[row].len() as u8;
                     i -= 1;
-                    let max_position = if object == Object::Projectile {
-                        8
-                    } else {
-                        self.objects[row].len() as u8
-                    };
                     (next_position < max_position).then_some(next_position)
                 }
                 _ => i.checked_sub(1),
@@ -347,17 +345,22 @@ impl SpaceShooter {
                 + (rng::rng() % (1 + Self::MAX_TIME - Self::MIN_TIME) as u32) as u8;
 
             let row = rng::rng() as u8 & 1;
+            let object = Object::random();
             self.set_object(
                 lcd,
                 Position::new(self.objects[0].len() as u8 - 1, row),
-                Some(Object::random()),
+                Some(object),
             );
 
             if (rng::rng() as u8) < Self::DOUBLE_SPAWN_CHANCE {
+                let mut object_2 = Object::random();
+                if object == object_2 {
+                    object_2 = Object::random();
+                }
                 self.set_object(
                     lcd,
                     Position::new(self.objects[0].len() as u8 - 1, 1 - row),
-                    Some(Object::random()),
+                    Some(object_2),
                 );
             }
         }
@@ -432,7 +435,7 @@ impl Object {
     pub fn random() -> Self {
         match rng::rng() % 100 {
             100.. => unreachable!(),
-            ..60 => Object::Asteroid,
+            ..25 => Object::Asteroid,
             ..75 => Object::Asteroid2X,
             ..93 => Object::Point,
             ..95 => Object::Health,
