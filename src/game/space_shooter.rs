@@ -1,9 +1,12 @@
 use core::ops::{Index, IndexMut};
 
+use arduino_hal::prelude::_unwrap_infallible_UnwrapInfallible;
+use ufmt::uwrite;
+
 use crate::{
     game::{position::Position, GameMode},
     lcd::characters,
-    rng, LCD,
+    rng, utils, LCD,
 };
 
 pub struct SpaceShooter {
@@ -14,12 +17,14 @@ pub struct SpaceShooter {
     pub shoot_row: Option<u8>,
     pub shoot_released: u8,
     pub shoot_cooldown: i8,
+    pub triple_shot_cooldown: u8,
 
     pub spawn_cooldown: u8,
-
     pub update_cooldown: u8,
 
     pub objects: [[Option<Object>; 16]; 2],
+
+    pub exit_countdown: u8,
 
     pub score: u32,
 }
@@ -34,12 +39,14 @@ impl Default for SpaceShooter {
             shoot_row: None,
             shoot_released: u8::MAX,
             shoot_cooldown: 0,
+            triple_shot_cooldown: 0,
 
             spawn_cooldown: 0,
-
             update_cooldown: 0,
 
             objects: [[None; 16]; 2],
+
+            exit_countdown: Self::EXIT_COUNTDOWN,
 
             score: 0,
         }
@@ -58,6 +65,10 @@ impl SpaceShooter {
     pub const MAX_TIME: u8 = 5;
 
     pub const DOUBLE_SPAWN_CHANCE: u8 = (80u16 * 255 / 100) as u8;
+
+    pub const EXIT_COUNTDOWN: u8 = 60 * 4;
+
+    pub const TRIPLE_SHOT_COOLDOWN: u8 = 24;
 
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
         characters::load_character_set(lcd, 2);
@@ -81,8 +92,16 @@ impl SpaceShooter {
             }
         }
 
+        self.draw_player(lcd);
+    }
+
+    pub fn draw_player(&self, lcd: &mut LCD) {
         lcd.set_cursor(self.ship_position);
-        lcd.write(Self::PLAYER_CHARACTER)
+        lcd.write(if self.ship_health_flash_time == 0 {
+            Self::PLAYER_CHARACTER
+        } else {
+            b'0' + self.ship_health.min(9)
+        });
     }
 
     pub fn set_object(
@@ -117,15 +136,43 @@ impl SpaceShooter {
     }
 
     pub fn update(&mut self, lcd: &mut LCD, raw_input: [i8; 2]) -> Option<GameMode> {
+        if self.ship_health == 0 {
+            if self.exit_countdown == Self::EXIT_COUNTDOWN {
+                lcd.set_cursor(Position::new(2, 0));
+                lcd.print_bytes(b"Score: \x04");
+                uwrite!(lcd.fmt(), "{}", self.score).unwrap_infallible();
+                for _ in 8 + utils::num_digits(self.score)..16 {
+                    lcd.write(b' ');
+                }
+            }
+
+            self.exit_countdown -= 1;
+
+            if self.exit_countdown == 0 {
+                characters::load_character_set(lcd, 0);
+                return Some(GameMode::Overworld);
+            } else {
+                return None;
+            }
+        }
+
+        if raw_input[0] == -1 {
+            self.use_power_up(lcd);
+        }
+
         self.update_ship_position(lcd, raw_input);
         if raw_input[0] == 1 {
-            if self.shoot_released > 2 {
+            if self.shoot_released > 2 && self.shoot_cooldown >= 0 {
                 let row = self.ship_position.row();
                 self.shoot_row = Some(row);
 
                 if self.shoot_cooldown == 0 {
                     lcd.set_cursor(Position::new(2, row));
-                    lcd.write(b'-');
+                    lcd.write(if self.triple_shot_cooldown == 0 {
+                        Object::Projectile
+                    } else {
+                        Object::TripleProjectile
+                    } as u8);
                 }
             }
 
@@ -141,31 +188,15 @@ impl SpaceShooter {
                 self.update_row(lcd, i);
             }
 
-            if self.spawn_cooldown > 0 {
-                self.spawn_cooldown -= 1;
-            } else {
-                self.spawn_cooldown = Self::MIN_TIME.saturating_sub(1)
-                    + (rng::rng() % (1 + Self::MAX_TIME - Self::MIN_TIME) as u32) as u8;
-
-                let row = rng::rng() as u8 & 1;
-                self.set_object(
-                    lcd,
-                    Position::new(self.objects[0].len() as u8 - 1, row),
-                    Some(Object::random()),
-                );
-
-                if (rng::rng() as u8) < Self::DOUBLE_SPAWN_CHANCE {
-                    self.set_object(
-                        lcd,
-                        Position::new(self.objects[0].len() as u8 - 1, 1 - row),
-                        Some(Object::random()),
-                    );
-                }
-            }
+            self.spawn_objects(lcd);
 
             self.update_ship_collision(lcd);
 
             self.update_ship_shooting(lcd, raw_input);
+
+            if self.triple_shot_cooldown > 0 {
+                self.triple_shot_cooldown -= 1;
+            }
 
             self.update_cooldown = Self::UPDATE_COOLDOWN.saturating_sub(1);
         }
@@ -174,12 +205,33 @@ impl SpaceShooter {
             self.ship_health_flash_time -= 1;
 
             if self.ship_health_flash_time == 0 {
-                lcd.set_cursor(self.ship_position);
-                lcd.write(Self::PLAYER_CHARACTER);
+                self.draw_player(lcd);
             }
         }
 
         None
+    }
+
+    pub fn use_power_up(&mut self, lcd: &mut LCD) {
+        let power_up_position = self.ship_position.with_column(0);
+        let Some(power_up) = self[power_up_position] else {
+            return;
+        };
+        match power_up {
+            Object::BeamPowerUpStored => {
+                lcd.set_cursor(self.ship_position.with_column(2));
+                for i in 2..self.objects[0].len() as u8 {
+                    lcd.write(b'-');
+                    let position = self.ship_position.with_column(i);
+                    self[position] = Some(Object::Beam);
+                }
+            }
+            Object::TripleShotPowerUpStored => {
+                self.triple_shot_cooldown = Self::TRIPLE_SHOT_COOLDOWN;
+            }
+            _ => return,
+        }
+        self.set_object(lcd, power_up_position, None);
     }
 
     pub fn update_ship_position(&mut self, lcd: &mut LCD, raw_input: [i8; 2]) {
@@ -192,10 +244,9 @@ impl SpaceShooter {
         lcd.set_cursor(self.ship_position);
         lcd.write(b' ');
 
-        lcd.set_cursor(new_position);
-        lcd.write(Self::PLAYER_CHARACTER);
-
         self.ship_position = new_position;
+
+        self.draw_player(lcd);
 
         self.update_ship_collision(lcd);
     }
@@ -206,13 +257,18 @@ impl SpaceShooter {
             return;
         }
 
-        if !(raw_input[0] == 1 || self.shoot_row.is_some() || self.shoot_cooldown < 0) {
+        let shoot_control = raw_input[0] == 1 || self.shoot_row.is_some();
+
+        if !(shoot_control || self.shoot_cooldown < 0) {
             return;
         }
 
-        self.shoot_row = None;
+        if shoot_control && self.triple_shot_cooldown > 0 && self.shoot_cooldown == 0 {
+            self.shoot_cooldown = -3;
+        }
 
         let row = self.shoot_row.unwrap_or(self.ship_position.row());
+        self.shoot_row = None;
 
         if self.shoot_cooldown < 0 {
             self.shoot_cooldown += 1;
@@ -222,7 +278,13 @@ impl SpaceShooter {
             self.shoot_cooldown = Self::PLAYER_SHOOT_COOLDOWN.saturating_sub(1) as i8;
         }
 
-        self.set_object(lcd, Position::new(2, row), Some(Object::Projectile));
+        let projectile = if self.triple_shot_cooldown > 0 {
+            Object::TripleProjectile
+        } else {
+            Object::Projectile
+        };
+
+        self.set_object(lcd, Position::new(2, row), Some(projectile));
     }
 
     pub fn update_row(&mut self, lcd: &mut LCD, row: usize) {
@@ -243,6 +305,7 @@ impl SpaceShooter {
                 }
                 Object::BeamDecay => None,
                 Object::Projectile | Object::TripleProjectile => {
+                    i += 1;
                     while self.objects[row]
                         .get(i as usize)
                         .copied()
@@ -251,7 +314,8 @@ impl SpaceShooter {
                     {
                         i += 1;
                     }
-                    let next_position = i + 1;
+                    let next_position = i;
+                    i -= 1;
                     (next_position < self.objects[row].len() as u8).then_some(next_position)
                 }
                 _ => i.checked_sub(1),
@@ -266,6 +330,30 @@ impl SpaceShooter {
                 }
             }
             i += 1;
+        }
+    }
+
+    pub fn spawn_objects(&mut self, lcd: &mut LCD) {
+        if self.spawn_cooldown > 0 {
+            self.spawn_cooldown -= 1;
+        } else {
+            self.spawn_cooldown = Self::MIN_TIME.saturating_sub(1)
+                + (rng::rng() % (1 + Self::MAX_TIME - Self::MIN_TIME) as u32) as u8;
+
+            let row = rng::rng() as u8 & 1;
+            self.set_object(
+                lcd,
+                Position::new(self.objects[0].len() as u8 - 1, row),
+                Some(Object::random()),
+            );
+
+            if (rng::rng() as u8) < Self::DOUBLE_SPAWN_CHANCE {
+                self.set_object(
+                    lcd,
+                    Position::new(self.objects[0].len() as u8 - 1, 1 - row),
+                    Some(Object::random()),
+                );
+            }
         }
     }
 
@@ -299,12 +387,7 @@ impl SpaceShooter {
             _ => (),
         }
 
-        lcd.set_cursor(self.ship_position);
-        lcd.write(if self.ship_health_flash_time == 0 {
-            Self::PLAYER_CHARACTER
-        } else {
-            b'0' + self.ship_health.min(9)
-        });
+        self.draw_player(lcd);
     }
 }
 
@@ -345,9 +428,9 @@ impl Object {
             100.. => unreachable!(),
             ..60 => Object::Asteroid,
             ..75 => Object::Asteroid2X,
-            ..85 => Object::Point,
-            ..90 => Object::Health,
-            ..95 => Object::BeamPowerUpCollectible,
+            ..90 => Object::Point,
+            ..95 => Object::Health,
+            ..98 => Object::BeamPowerUpCollectible,
             ..100 => Object::TripleShotPowerUpCollectible,
         }
     }

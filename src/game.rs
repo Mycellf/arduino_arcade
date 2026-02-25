@@ -57,9 +57,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             repeat_time: [0; 2],
 
             overworld: Overworld::default(),
-            // DEBUG:
-            // game_mode: GameMode::Overworld,
-            game_mode: GameMode::SpaceShooter(SpaceShooter::default()),
+            game_mode: GameMode::Overworld,
 
             high_scores: [0; 6],
 

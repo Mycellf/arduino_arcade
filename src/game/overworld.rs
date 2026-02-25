@@ -55,7 +55,7 @@ impl Default for Overworld {
 
 impl Overworld {
     pub const PLAYER_CHARACTER: u8 = 0;
-    pub const SCORE_SYMBOLS: [u8; 7] = [0x06, b'W', b'?', b'?', b'?', b'?', b'?'];
+    pub const SCORE_SYMBOLS: [u8; 7] = [0x06, b'W', 0x06, b'?', b'?', b'?', b'?'];
 
     pub fn draw_full_screen(&mut self, lcd: &mut LCD, scores: &[u32; 6]) {
         self.print_screen(lcd);
@@ -108,8 +108,12 @@ impl Overworld {
             .with_row(1 - self.player_position.row());
 
         match self.get_tile_at(opposite_position) {
-            tile @ b'1'..=b'7' => {
-                self.draw_score(lcd, scores, tile - b'1');
+            tile @ b'1'..=b'7' if tile != b'4' => {
+                let mut slot = tile - b'1';
+                if tile > b'4' {
+                    slot -= 1;
+                }
+                self.draw_score(lcd, scores, slot);
             }
             _ => (),
         }
