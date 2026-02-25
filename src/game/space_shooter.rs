@@ -317,7 +317,12 @@ impl SpaceShooter {
                     }
                     let next_position = i;
                     i -= 1;
-                    (next_position < self.objects[row].len() as u8).then_some(next_position)
+                    let max_position = if object == Object::Projectile {
+                        8
+                    } else {
+                        self.objects[row].len() as u8
+                    };
+                    (next_position < max_position).then_some(next_position)
                 }
                 _ => i.checked_sub(1),
             };
