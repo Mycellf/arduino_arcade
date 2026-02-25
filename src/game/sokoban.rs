@@ -35,9 +35,13 @@ impl Sokoban {
         soft_input: [i8; 2],
     ) -> Option<GameMode> {
         if let Some(level) = &mut self.level {
-            if let Some(_) = level.update(lcd, raw_input, soft_input) {
+            if let Some(was_success) = level.update(lcd, raw_input, soft_input) {
                 self.level = None;
-                self.level_select.draw_victory(lcd);
+                if was_success {
+                    self.level_select.draw_victory(lcd);
+                } else {
+                    self.level_select.draw_full_screen(lcd);
+                }
             }
 
             None
@@ -216,7 +220,12 @@ impl Level {
         }
     }
 
-    pub fn update(&mut self, lcd: &mut LCD, raw_input: [i8; 2], soft_input: [i8; 2]) -> Option<()> {
+    pub fn update(
+        &mut self,
+        lcd: &mut LCD,
+        raw_input: [i8; 2],
+        soft_input: [i8; 2],
+    ) -> Option<bool> {
         self.flash_timer = self.flash_timer.saturating_sub(1);
         if self.flash_timer == 0 || self.flash_timer == Self::FLASH_LENGTH {
             self.update_all_tiles(lcd, |top, bottom| {
@@ -244,7 +253,7 @@ impl Level {
             || self.emergency_exit_timer >= Self::EMERGENCY_EXIT_TIME
         {
             characters::load_character_set(lcd, 0);
-            Some(())
+            Some(self.num_boxes == 0)
         } else {
             None
         }
