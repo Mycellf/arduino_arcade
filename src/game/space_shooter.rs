@@ -33,7 +33,7 @@ impl Default for SpaceShooter {
     fn default() -> Self {
         Self {
             ship_position: Position::new(1, 0),
-            ship_health: 3,
+            ship_health: Self::MAX_HEALTH,
             ship_health_flash_time: 0,
 
             shoot_row: None,
@@ -57,6 +57,7 @@ impl SpaceShooter {
     pub const PLAYER_CHARACTER: u8 = 0;
 
     pub const PLAYER_SHOOT_COOLDOWN: u8 = 3;
+    pub const MAX_HEALTH: u8 = 3;
 
     pub const UPDATE_COOLDOWN: u8 = 20;
     pub const SHIP_HEALTH_FLASH_TIME: u8 = 60;
@@ -371,7 +372,7 @@ impl SpaceShooter {
                 }
             }
             Object::Health => {
-                if self.ship_health < 9 {
+                if self.ship_health < Self::MAX_HEALTH {
                     self.ship_health += 1;
                 }
                 self.ship_health_flash_time = Self::SHIP_HEALTH_FLASH_TIME;
