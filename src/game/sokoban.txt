@@ -1,23 +1,23 @@
-Paths:
-|   #z#z  z z z z|
-|p  # #   x x x x|
-|   #x#x#        |
-|     x z        |
 Carbon Copy:
 |################|
 |p  x        z   |
 |   z        x   |
 |################|
-Doubles:
-|               z|
-|p  # # x   z# x |
-|   xxz xx z## x |
-|   #z#   z###  z|
+Paths:
+|   #z#z  z z z z|
+|p  # #   x x x x|
+|   #x#x#        |
+|     x z        |
 Switcharound:
 |   #       #    |
 |p x#    xxx  #  |
 |   #  #xzzz#    |
 |z     z         |
+Doubles:
+|               z|
+|p  # # x   z# x |
+|   xxz xx z## x |
+|   #z#   z###  z|
 Opposite:
 | #z  # z  z    #|
 |px          x   |
