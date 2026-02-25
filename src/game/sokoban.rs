@@ -37,8 +37,7 @@ impl Sokoban {
         if let Some(level) = &mut self.level {
             if let Some(_) = level.update(lcd, raw_input, soft_input) {
                 self.level = None;
-                self.level_select.selection_cooldown = LevelSelect::SELECTION_COOLDOWN;
-                self.level_select.draw_full_screen(lcd);
+                self.level_select.draw_victory(lcd);
             }
 
             None
@@ -91,7 +90,7 @@ impl Default for LevelSelect {
 impl LevelSelect {
     pub const PLAYER_CHARACTER: u8 = 0;
 
-    pub const SELECTION_COOLDOWN: u8 = 60;
+    pub const SELECTION_COOLDOWN: u8 = 3 * 60;
 
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
         lcd.clear();
@@ -102,6 +101,14 @@ impl LevelSelect {
         lcd.write(Self::PLAYER_CHARACTER);
     }
 
+    pub fn draw_victory(&mut self, lcd: &mut LCD) {
+        lcd.clear();
+        lcd.set_cursor(Position::new(0, 0));
+        lcd.print_bytes(b"Level complete!");
+
+        self.selection_cooldown = Self::SELECTION_COOLDOWN;
+    }
+
     pub fn update(
         &mut self,
         lcd: &mut LCD,
@@ -110,6 +117,12 @@ impl LevelSelect {
     ) -> Option<LevelSelection> {
         if self.selection_cooldown > 0 {
             self.selection_cooldown -= 1;
+
+            if self.selection_cooldown == 0 {
+                self.draw_full_screen(lcd);
+            }
+
+            return None;
         }
 
         match soft_input[0] {
