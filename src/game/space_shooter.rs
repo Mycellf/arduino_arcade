@@ -220,10 +220,10 @@ impl SpaceShooter {
         match power_up {
             Object::BeamPowerUpStored => {
                 lcd.set_cursor(self.ship_position.with_column(2));
+                let row = self.ship_position.row();
                 for i in 2..self.objects[0].len() as u8 {
                     lcd.write(b'-');
-                    let position = self.ship_position.with_column(i);
-                    self[position] = Some(Object::Beam);
+                    self.objects[row as usize][i as usize] = Some(Object::Beam);
                 }
             }
             Object::TripleShotPowerUpStored => {
