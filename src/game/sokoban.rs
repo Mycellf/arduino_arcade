@@ -99,7 +99,7 @@ impl LevelSelect {
     pub fn draw_full_screen(&self, lcd: &mut LCD) {
         lcd.clear();
         lcd.set_cursor(Position::new(0, 0));
-        lcd.print_bytes(b"\x7f123456789ABCDEF");
+        lcd.print_bytes(b"\x7fABCDEFGHIJKLMNO");
 
         lcd.set_cursor(self.player_position);
         lcd.write(Self::PLAYER_CHARACTER);
