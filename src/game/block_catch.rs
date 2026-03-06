@@ -326,7 +326,7 @@ impl Tile {
     pub fn marker_tile(self) -> u8 {
         match self {
             Tile::Empty | Tile::Collectible => 0x05,
-            Tile::Wall => b' ',
+            Tile::Wall => 0x07,
         }
     }
 
