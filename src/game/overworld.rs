@@ -7,33 +7,16 @@ use crate::{
 };
 
 #[rustfmt::skip]
-pub const ARCADE: [[&[u8]; 2]; 2] = [
+pub const ARCADE: [[[u8; 16]; 2]; 2] = [
     [
-        b"  \x05 [1]     =3= ",
-        b"        \x032\x03    \x7e",
+        *b"  \x05 [1]     =3= ",
+        *b"        \x032\x03    \x7e",
     ],
     [
-        b" :4:     <6>    ",
-        b"\x7f    {5}     \xff7\xff",
+        *b" :4:     <6>    ",
+        *b"\x7f    {5}     \xff7\xff",
     ]
 ];
-
-const _: () = {
-    let mut i = 0;
-    while i < ARCADE.len() {
-        let mut j = 0;
-        while j < ARCADE[0].len() {
-            assert!(
-                ARCADE[i][j].len() == 16,
-                "The width of each line should match the screen's width",
-            );
-
-            j += 1;
-        }
-
-        i += 1;
-    }
-};
 
 pub struct Overworld {
     pub screen: u8,
