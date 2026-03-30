@@ -4,8 +4,9 @@
 //every time increment moves notes up
 //hit the right note and an increment hapens reseting time 
 //dificulty is number in the corner slowly going down, the time left to make an action 
-use core::ops::{Index, IndexMut, Range};
-use arduino_hal::prelude::_unwrap_infallible_UnwrapInfallible;
+
+//use core::ops::{Index, IndexMut, Range};
+//use arduino_hal::prelude::_unwrap_infallible_UnwrapInfallible;
 use ufmt::uwrite;
 
 use crate::{
@@ -13,7 +14,7 @@ use crate::{
     rng, utils, LCD,
 };
 
-pub struct note_beat{
+pub struct NoteBeat{
     // pub spawn_timer: u8,
     // pub move_timer: u8,
     // pub score: u8,
@@ -21,9 +22,10 @@ pub struct note_beat{
 //array of positons or somthing for 
 }
 
-impl default for note_beat{
+impl default for NoteBeat{
     fn default() -> Self{
         Self{
+            uwrite!(serial, "Hello world noteBeat"),
             // spawn_timer: 0,
             // move_timer: 0,
             // score: 0,
@@ -34,8 +36,17 @@ impl default for note_beat{
     }
 
 }
-pub enum directions{
-    left, right, none
+// pub enum directions{
+//     left, right, none,
 
     
+// }
+
+pub fn draw_full_screen() {
+   uwrite!(serial, "draw full screen called");
 }
+
+pub fn update(){
+    uwrite!(serial, "update called");
+}
+
