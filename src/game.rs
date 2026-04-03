@@ -1,9 +1,11 @@
+use core::arch::naked_asm;
+
 use embedded_hal::digital::InputPin;
 
 use crate::{
     game::{
         black_jack::BlackJack, block_catch::BlockCatch, overworld::Overworld, sokoban::Sokoban,
-        space_shooter::SpaceShooter,
+        space_shooter::SpaceShooter, note_beat::NoteBeat,
     },
     LCD,
 };
@@ -14,6 +16,7 @@ pub mod overworld;
 pub mod position;
 pub mod sokoban;
 pub mod space_shooter;
+mod note_beat;
 
 pub struct Game<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> {
     pub repeat_time: [i8; 2],
@@ -38,6 +41,7 @@ pub enum GameMode {
     BlackJack(BlackJack),
     SpaceShooter(SpaceShooter),
     Sokoban(Sokoban),
+    NoteBeat(NoteBeat),
 }
 
 impl GameMode {
@@ -48,6 +52,7 @@ impl GameMode {
             GameMode::BlackJack(_) => 1,
             GameMode::SpaceShooter(_) => 2,
             GameMode::Sokoban(_) => return None,
+            GameMode::NoteBeat(_) => return None,
         })
     }
 }
@@ -81,6 +86,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::BlackJack(black_jack) => black_jack.draw_full_screen(lcd),
             GameMode::SpaceShooter(space_shooter) => space_shooter.draw_full_screen(lcd),
             GameMode::Sokoban(sokoban) => sokoban.draw_full_screen(lcd),
+            GameMode::NoteBeat(note_beat) => note_beat.draw_full_screen(lcd),
         }
     }
 
@@ -97,6 +103,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::BlackJack(black_jack) => black_jack.update(lcd, raw_input, soft_input),
             GameMode::SpaceShooter(space_shooter) => space_shooter.update(lcd, raw_input),
             GameMode::Sokoban(sokoban) => sokoban.update(lcd, raw_input, soft_input),
+            GameMode::NoteBeat(note_beat) => note_beat.update(lcd, raw_input, soft_input),
         };
 
         if let Some(mode) = new_mode {
@@ -192,6 +199,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             }
             GameMode::SpaceShooter(space_shooter) => space_shooter.score,
             GameMode::Sokoban(_) => 0,
+            GameMode::NoteBeat(_) => 0,
         }
     }
 }
