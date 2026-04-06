@@ -1,22 +1,20 @@
-use core::arch::naked_asm;
-
 use embedded_hal::digital::InputPin;
 
 use crate::{
     game::{
-        black_jack::BlackJack, block_catch::BlockCatch, overworld::Overworld, sokoban::Sokoban,
-        space_shooter::SpaceShooter, note_beat::NoteBeat,
+        black_jack::BlackJack, block_catch::BlockCatch, note_beat::NoteBeat, overworld::Overworld,
+        sokoban::Sokoban, space_shooter::SpaceShooter,
     },
     LCD,
 };
 
 pub mod black_jack;
 pub mod block_catch;
+pub mod note_beat;
 pub mod overworld;
 pub mod position;
 pub mod sokoban;
 pub mod space_shooter;
-mod note_beat;
 
 pub struct Game<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> {
     pub repeat_time: [i8; 2],
@@ -52,7 +50,7 @@ impl GameMode {
             GameMode::BlackJack(_) => 1,
             GameMode::SpaceShooter(_) => 2,
             GameMode::Sokoban(_) => return None,
-            GameMode::NoteBeat(_) => return None,
+            GameMode::NoteBeat(_) => 3,
         })
     }
 }
@@ -199,7 +197,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             }
             GameMode::SpaceShooter(space_shooter) => space_shooter.score,
             GameMode::Sokoban(_) => 0,
-            GameMode::NoteBeat(_) => 0,
+            GameMode::NoteBeat(note_beat) => note_beat.score,
         }
     }
 }
