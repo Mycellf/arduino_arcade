@@ -10,8 +10,7 @@ use arduino_hal::prelude::_unwrap_infallible_UnwrapInfallible;
 use ufmt::uwrite;
 
 use crate::{
-    game::{position::Position, GameMode},
-    rng, utils, LCD,
+    LCD, game::{GameMode, position::Position}, rng::{self, rng}, utils
 };
 
 
@@ -19,6 +18,10 @@ pub struct NoteBeat{
     pub position_left: Position,
     pub position_self: Position,
     pub generated_array: [Directions; 8],
+    pub difficulty: u32,
+    pub time: u8,
+    pub time_gap:u8,
+    pub got_hit:bool,
     //pub size_of_array: u8,
 
 
@@ -36,7 +39,11 @@ impl Default for NoteBeat{
         Self{
             position_left: Position::new(0, 0),
             position_self: Position::new(7, 1),
-            generated_array: [none; 8],
+            generated_array: [Directions::empty; 8],
+            difficulty: 8,
+            time:0,
+            time_gap: 30,
+            got_hit: false,
             
             // spawn_timer: 0,
             // move_timer: 0,
@@ -48,8 +55,9 @@ impl Default for NoteBeat{
     }
 
 }
+#[derive(Copy, Clone)]
 pub enum Directions{
-    left, right, none,
+    left, right, empty,
 
     
 }
@@ -62,40 +70,67 @@ impl NoteBeat {
         uwrite!(lcd.fmt(), "Hello, world!").unwrap_infallible();
     }
 
-    fn parse_queue(direction_list: [Directions; 8])-> &str {
+    pub fn parse_queue( &mut self) -> &str {
         let mut name="";
-        
-        for i in 0..size_of(){
-            if(direction_list[i]==Directions::right){
-                name = name + "R";
-            }else{
-                name = name + " ";
-            }
-            if(direction_list[i]==Directions::left){
-                name = "L"+ name;
-            }else{
-                name = " "+ name;
-            }
+        for i in 0..8{
+            name = match self.generated_array[i] {
+                Directions::right => " {name}R",
+                Directions::left =>  "L{name} ",
+                Directions::empty =>  " {name} ",
+            };
         }
+                
         return name;
 
+    }
+
+    pub fn add_to_queue(&mut self){
+        let num = rng()%self.difficulty;
+        for i in 0..7{
+            self.generated_array[i] = self.generated_array[i+1];
+        }
+         self.generated_array[7]= match num{
+            0=> Directions::left,
+            1=>Directions::right,
+            2=> Directions::left,
+            3=>Directions::right,
+            _=> Directions::empty,
+        }
     }
 
     pub fn update(&mut self, lcd: &mut LCD, raw_input: [i8; 2], soft_input: [i8; 2]) -> Option<GameMode> {
         
         lcd.set_cursor(self.position_left);
-        lcd.clear();
-        let incoming = parse_queue(generated_array);
-        uwrite!(lcd.fmt(), "{}", incoming).unwrap_infallible();
+
+        if self.time%self.time_gap == 0{
+            self.add_to_queue();
+            self.time=0;
+            lcd.clear();
+
+        }else{
+            self.time=self.time+1;
+        }
+
+        let display_text=self.parse_queue();
+       // self.parse_queue();
+        uwrite!(lcd.fmt(), "{}", display_text).unwrap_infallible();
         lcd.set_cursor(self.position_self);
         uwrite!(lcd.fmt(), "pl").unwrap_infallible();
 
-        if raw_input[0]> 0 {
-        uwrite!(lcd.fmt(), "0+").unwrap_infallible();
+        if raw_input[0]> 0 {//right
+            lcd.set_cursor(Position::new(8, 0));
+        uwrite!(lcd.fmt(), ">").unwrap_infallible();
+        //if item hit set frount of queue to empty and time to 28 
 
-        }else if raw_input[1]> 0  {
-        uwrite!(lcd.fmt(), "1+").unwrap_infallible();
+        }else if raw_input[0]< 0  {//left
+            lcd.set_cursor(Position::new(7, 0));
+        uwrite!(lcd.fmt(), "<").unwrap_infallible();
+        //if item hit set frount of queue to empty and time to 28
+        }else if raw_input[1]< 0{
+            //exit
+
         }
+
 
 
         None
