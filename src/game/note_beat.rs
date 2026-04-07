@@ -18,6 +18,7 @@ pub struct NoteBeat {
     
     pub player_position: Position,
     pub player_hit: bool,
+    pub redraw: bool,
     pub lives: u8,
     pub combo: u16,
     pub score: u32,
@@ -34,6 +35,7 @@ impl Default for NoteBeat {
             player_position: Self::START_POSITION,
 
             player_hit: false,
+            redraw: false,
             // normaly there would be three beond testing
             lives: 30,
             combo: 1,
@@ -46,6 +48,7 @@ impl Default for NoteBeat {
 pub enum Object {
     None = b' ',
     Default = b'*',
+    Strike = b'o',
 }
 
 impl NoteBeat {
@@ -68,7 +71,6 @@ impl NoteBeat {
 
     pub fn add_to_queue(&mut self) {
         let random = rng() % self.difficulty as u32;
-
         // TODO: if the player hits an enemy delete it and reduce time until the next enemy
         
         self.move_objects();
@@ -99,20 +101,34 @@ impl NoteBeat {
         }
     }
 
+
     fn hit_object(&mut self, raw_input: [i8; 2]){
 
             if (raw_input[0]>0)&&(self.objects[6]==Object::Default){
-                self.objects[6]=Object::None;
+                self.objects[6]=Object::Strike;
                 self.score=self.score+self.combo as u32;
                 self.combo=self.combo+1;
+                self.redraw=true;
 
             }else if(raw_input[0]<0)&&(self.objects[9]==Object::Default){
-                self.objects[9]=Object::None;
+                self.objects[9]=Object::Strike;
                 self.score=self.score+self.combo as u32;
                 self.combo=self.combo+1;
-
+                self.redraw=true;
             }else {
                 self.combo=1;
+            }
+    }
+
+    fn draw_objects(&mut self, lcd: &mut LCD,){
+        //lcd.clear();
+         lcd.set_cursor(Self::LEFT_POSITION);
+            for i in self.objects{
+                match i {
+                    Object::None=>  lcd.write(b'_'),
+                    Object::Default=>  lcd.write(b'*'),
+                    Object::Strike=>lcd.write(b'o'),
+               }
             }
     }
 
@@ -130,18 +146,21 @@ impl NoteBeat {
         if self.time % self.time_gap == 0 {
 
             self.add_to_queue();
-            self.move_objects();
-            lcd.clear();
-            for i in self.objects{
-                match i {
-                    Object::None=>  lcd.write(b'_'),
-                    Object::Default=>  lcd.write(b'*'),
-               }
-            }
+
+            // thank you jeffry you are an amasing rubber duck
+          //  self.move_objects();
+           //draw(lcd);
+           lcd.clear();
+           self.redraw=true;
             self.time = 1;
             
         } else {
             self.time = self.time + 1;
+        }
+
+        if self.redraw{
+            self.draw_objects(lcd);
+            self.redraw =false;
         }
 
         if self.player_hit {
