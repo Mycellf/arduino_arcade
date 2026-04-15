@@ -105,6 +105,11 @@ impl LevelSelect {
         lcd.set_cursor(Position::new(0, 1));
         lcd.print_bytes(&Self::BACKGROUND);
 
+        for offset in [-1, 1] {
+            lcd.set_cursor(self.player_position.nudge_column_saturating(offset));
+            lcd.write(b' ');
+        }
+
         lcd.set_cursor(self.player_position);
         lcd.write(Self::PLAYER_CHARACTER);
     }
