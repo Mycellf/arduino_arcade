@@ -7,6 +7,10 @@ use crate::{
     },
     LCD,
 };
+// TODO fix combo 
+//deacrease dificulty when hit
+//visual enemy types 
+//slower dificulty curve
 
 pub mod black_jack;
 pub mod block_catch;
@@ -234,8 +238,8 @@ pub struct AxisDebouncer {
 
 impl AxisDebouncer {
     const MAX_RAW_VALUE: u16 = 1023;
-    const NEGATIVE_THRESHOLD: u16 = Self::MAX_RAW_VALUE * 1 / 4;
-    const POSITIVE_THRESHOLD: u16 = Self::MAX_RAW_VALUE * 3 / 4;
+    const NEGATIVE_THRESHOLD: u16 = Self::MAX_RAW_VALUE * 3 / 8;
+    const POSITIVE_THRESHOLD: u16 = Self::MAX_RAW_VALUE * 5 / 8;
 
     pub fn new() -> Self {
         Self {
