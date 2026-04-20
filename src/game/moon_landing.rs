@@ -10,20 +10,43 @@ use crate::{
 };
 
 pub struct MoonLanding{
-    pub speedX: u8,
-    pub speedY: u8,
-   // pub velosity: u8,
-    pub speedAngle: u8,
-    pub thrustPower: u8,
-    pub thrustAngle: u8,
+    ///sim values
+    /// 
+    pub speed: [i16; 2],
+   // pub speedX: u8,
+    //pub speedY: u8,
+
+    pub acceleration: [i16; 2],
+   // pub thrustX:u8,
+    //pub thrustY:u8,
+
+    pub ship_position:  [f32; 2],
+    pub moon_position:  [f32; 2],
+    
     pub fuel: u8,
-    pub gravity: u8,
+    pub empty_shipMass:u8,
     pub shipMass: u8,
 
-    pub speedDisplay: Position,
-    pub thrustDisplay: Position,
-    pub fuelDisplay: Position,
-    pub placeHolder: Position,
+    //const radius moon
+    pub seperation_moon: f32,
+    pub gravity: u8,
+    pub grav_constent: u8,
+    pub moon_mass: u8,
+   
+
+
+    ///display values
+    /// 
+    pub speed_display: Position,
+    //pub velosity: u8,
+    //pub speedAngle: u8,
+    pub thrust_display: Position,
+    //pub thrustPower: u8,
+    //pub thrustAngle: u8,
+    pub fuel_display: Position,
+    //
+    pub Seperation_display: Position,
+    //
 
 }
 
@@ -32,23 +55,33 @@ impl Default for MoonLanding{
     fn default() -> Self{
 
         Self{
-            speedX: 300,
-            speedY: 0,
-          //  velosity: sqrt(speedX*speedX+speedY*speedY),
-            speedAngle: speedY/speedX,//add tan^-1 later
-            thrustPower: 0,
-            thrustAngle: 0,//parilel to surface 
-            fuel: 100, //used to power thrust
-            gravity: 1,
-            shipMass: 400+fuel,
+            speed: [300, 0],
+            acceleration: [0,0],
+            moon_position: [0,0],
+            ship_position: [5000, 5000],
+            gravity: grav_constent*moon_mass(ship_position[0]+ship_position[1]), //grav_const and moon_mass replaced with numbers later
 
-            speedDisplay: Position::new(1, 0),
-            thrustDisplay: Position::new(0, 0),
-            fuelDisplay: Position::new(0, 8),
-            placeHolder: Position::new(1, 8),
+            fuel: 100, //some number
+            empty_shipMass: 400,//some const number 
+            shipMass: empty_shipMass+fuel,
+
+            seperation_moon: 
+
+
+
+            
+
+            speed_display: Position::new(1, 0),
+            thrust_display: Position::new(0, 0),
+            fuel_display: Position::new(0, 8),
+            Seperation_display: Position::new(1, 8),
             
         }
 
+    }
+
+    pub fn get_seperation(){
+        
     }
 }
 
@@ -68,6 +101,10 @@ impl MoonLanding {
     }
 
     pub fn update(&mut self, lcd: &mut LCD, raw_input: [i8; 2], soft_input: [i8; 2]) -> Option<GameMode> {
+
+        if raw_input[0]!=0{
+            return return Some(GameMode::Overworld);
+        }
         
 
         None
