@@ -24,28 +24,28 @@ pub struct MoonLanding{
     pub moon_position:  [f32; 2],
     
     pub fuel: u8,
-    pub empty_shipMass:u8,
+    pub empty_shipMass:u8,//const
     pub shipMass: u8,
 
-    //const radius moon
+    pub moon_radius:f32,//const
+    pub grav_constent: u8,//const
+    pub moon_mass: u8,//const
+
     pub seperation_moon: f32,
     pub gravity: u8,
-    pub grav_constent: u8,
-    pub moon_mass: u8,
-   
 
 
     ///display values
     /// 
-    pub speed_display: Position,
+    pub speed_display: Position,//const
     //pub velosity: u8,
     //pub speedAngle: u8,
-    pub thrust_display: Position,
+    pub thrust_display: Position,//const
     //pub thrustPower: u8,
     //pub thrustAngle: u8,
-    pub fuel_display: Position,
+    pub fuel_display: Position,//const
     //
-    pub Seperation_display: Position,
+    pub Seperation_display: Position,//const
     //
 
 }
@@ -65,11 +65,8 @@ impl Default for MoonLanding{
             empty_shipMass: 400,//some const number 
             shipMass: empty_shipMass+fuel,
 
-            seperation_moon: 
-
-
-
-            
+            moon_radius: 3000,
+            seperation_moon: self.get_seperation(),
 
             speed_display: Position::new(1, 0),
             thrust_display: Position::new(0, 0),
@@ -80,9 +77,17 @@ impl Default for MoonLanding{
 
     }
 
-    pub fn get_seperation(){
-        
+
+    fn get_seperation(self)->f32{
+       let distance_to_core= get_distance(ship_position[0], ship_position[1]);
+
+        return distance_to_core-moon_radius;
     }
+}
+
+fn get_distance( x:f32, y:f32){
+    let distance = ((x)*(x)+(y)(y)).sqrt();
+    return distance;
 }
 
 impl MoonLanding {
