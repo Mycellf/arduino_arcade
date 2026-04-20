@@ -3,7 +3,7 @@ use embedded_hal::digital::InputPin;
 use crate::{
     game::{
         black_jack::BlackJack, block_catch::BlockCatch, note_beat::NoteBeat, overworld::Overworld,
-        sokoban::Sokoban, space_shooter::SpaceShooter,
+        sokoban::Sokoban, space_shooter::SpaceShooter, moon_landing::MoonLanding,
     },
     LCD,
 };
@@ -44,6 +44,7 @@ pub enum GameMode {
     SpaceShooter(SpaceShooter),
     Sokoban(Sokoban),
     NoteBeat(NoteBeat),
+    MoonLanding(MoonLanding),
 }
 
 impl GameMode {
@@ -55,6 +56,7 @@ impl GameMode {
             GameMode::SpaceShooter(_) => 2,
             GameMode::Sokoban(_) => return None,
             GameMode::NoteBeat(_) => 3,
+            GameMode::MoonLanding(_)=> return None,
         })
     }
 }
@@ -89,6 +91,8 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::SpaceShooter(space_shooter) => space_shooter.draw_full_screen(lcd),
             GameMode::Sokoban(sokoban) => sokoban.draw_full_screen(lcd),
             GameMode::NoteBeat(note_beat) => note_beat.draw_full_screen(lcd),
+            GameMode::MoonLanding(mooon_landing) => mooon_landing.draw_full_screen(lcd),
+
         }
     }
 
@@ -106,6 +110,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::SpaceShooter(space_shooter) => space_shooter.update(lcd, raw_input),
             GameMode::Sokoban(sokoban) => sokoban.update(lcd, raw_input, soft_input),
             GameMode::NoteBeat(note_beat) => note_beat.update(lcd, raw_input, soft_input),
+            GameMode::MoonLanding(moon_landing)=> moon_landing.update(lcd, raw_input, soft_input),
         };
 
         if let Some(mode) = new_mode {
@@ -202,6 +207,8 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::SpaceShooter(space_shooter) => space_shooter.score,
             GameMode::Sokoban(_) => 0,
             GameMode::NoteBeat(note_beat) => note_beat.score,
+            GameMode::MoonLanding(moon_landing) => 0,
+
         }
     }
 }
