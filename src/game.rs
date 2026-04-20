@@ -7,10 +7,6 @@ use crate::{
     },
     LCD,
 };
-// TODO fix combo 
-//deacrease dificulty when hit
-//visual enemy types 
-//slower dificulty curve
 
 pub mod black_jack;
 pub mod block_catch;
@@ -19,6 +15,7 @@ pub mod overworld;
 pub mod position;
 pub mod sokoban;
 pub mod space_shooter;
+pub mod moon_landing;
 
 pub struct Game<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> {
     pub repeat_time: [i8; 2],

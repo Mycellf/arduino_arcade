@@ -9,12 +9,6 @@ use crate::{
 use arduino_hal::prelude::_unwrap_infallible_UnwrapInfallible;
 use ufmt::uwrite;
 
-// dificulty curve //speed yes, other factors no
-// miss efects //done
-// combo fix //done
-//
-//
-
 pub struct NoteBeat {
     pub objects: [Object; 16],
     pub difficulty: u8,
