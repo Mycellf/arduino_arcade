@@ -204,7 +204,7 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::SpaceShooter(space_shooter) => space_shooter.score,
             GameMode::Sokoban(_) => 0,
             GameMode::NoteBeat(note_beat) => note_beat.score,
-            GameMode::MoonLanding(moon_landing) => 0,
+            GameMode::MoonLanding(_) => 0,
 
         }
     }
