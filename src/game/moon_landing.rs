@@ -1,14 +1,14 @@
 use crate::{
     game::{position::Position, GameMode},
-     LCD,
+    LCD,
 };
 //use std::num::Float;
 use micromath::F32Ext;
 use arduino_hal::prelude::_unwrap_infallible_UnwrapInfallible;
-///speed , angle of speed
-/// level of thrust, angle of thrust
-/// amount of fuel f99%->f00%
-/// last corner shows the brawd image of angle and distance to the moon
+//speed , angle of speed
+// level of thrust, angle of thrust
+// amount of fuel f99%->f00%
+// last corner shows the brawd image of angle and distance to the moon
 use ufmt::uwrite;
 
 pub struct MoonLanding {
@@ -26,19 +26,16 @@ pub struct MoonLanding {
     pub distance_to_moon: f32,
     pub gravity: u8,
 
-    ///display values
-    ///
-    pub speed_display: Position, //const
+    //display values
     //pub velosity: u8,
     //pub speedAngle: u8,
-    pub thrust_display: Position, //const
+   
     //pub thrustPower: u8,
 
     //pub thrustAngle: u8,
-    pub fuel_display: Position, //const
+   
     //
-    pub seperation_display: Position, //const
-    pub seperation_moon: f32,
+    //pub seperation_moon: f32,
 }
 
 impl Default for MoonLanding {
@@ -59,14 +56,7 @@ impl Default for MoonLanding {
 
             distance_to_moon: get_distance(Self::START_POSITION_X, Self::START_POSITION_Y),
 
-            speed_display: Position::new(1, 0),
-
-            thrust_display: Position::new(0, 0),
-
-            fuel_display: Position::new(0, 8),
-
-            seperation_display: Position::new(1, 8),
-            seperation_moon: get_distance(Self::START_POSITION_X, Self::START_POSITION_X)-Self::MOON_RADIUS as f32,
+           // seperation_moon: get_distance(Self::START_POSITION_X, Self::START_POSITION_X)-Self::MOON_RADIUS as f32,
         }
     }
 }
@@ -86,6 +76,15 @@ impl MoonLanding {
     pub const MOON_RADIUS: u32=1;//place holder value
     pub const BASE_SHIP: u16 = 400;// place holder value
     pub const STARTING_FUEL: u8=100;
+
+    pub const DISPLAY_SPEED: Position= Position::new(0, 0);
+    //ve
+    pub const DISPLAY_THRUST: Position= Position::new(10, 0);
+    //ac
+    pub const DISPLAY_FUEL: Position= Position::new(0, 1);
+    //fu
+    pub const DISPLAY_ALTITUDE: Position= Position::new(10, 1);
+    //Alt
 
     fn get_seperation(&self) -> f32 {
         let distance_to_core = get_distance(self.ship_position[0], self.ship_position[1]);
@@ -110,7 +109,7 @@ impl MoonLanding {
 
 
 
-    
+
     pub fn update(
         &mut self,
         lcd: &mut LCD,
