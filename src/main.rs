@@ -23,7 +23,7 @@ use crate::{
 };
 
 /// That's too many to type out all the time
-pub type LCD = lcd::LCD<PB4, PB2, PB3, PD5, PD4, PD3, PD2>;
+pub type LCD = lcd::LCD<PD2, PD3, PD4, PD5, PD6, PD7, PB0>;
 
 // NOTE: For wboom's hardware
 
@@ -49,14 +49,14 @@ fn main() -> ! {
     unsafe { interrupt::enable() };
 
     let mut lcd = LCD {
-        register_select: pins.d12.into_output(),
-        read_write: pins.d10.into_output(),
-        enable: pins.d11.into_output(),
+        register_select: pins.d2.into_output(),
+        read_write: pins.d3.into_output(),
+        enable: pins.d4.into_output(),
 
         data_4: pins.d5.into_output(),
-        data_5: pins.d4.into_output(),
-        data_6: pins.d3.into_output(),
-        data_7: pins.d2.into_output(),
+        data_5: pins.d6.into_output(),
+        data_6: pins.d7.into_output(),
+        data_7: pins.d8.into_output(),
 
         info: LCDInfo::new(16, NumLines::Two, FontSize::Dots5x8),
     };
@@ -86,10 +86,10 @@ fn main() -> ! {
     let joystick_y = pins.a2.into_analog_input(&mut adc);
 
     let mut game = Game::new(
-        pins.d7.into_pull_up_input(),
+        pins.d12.into_pull_up_input(),
         pins.d9.into_pull_up_input(),
-        pins.d6.into_pull_up_input(),
-        pins.d8.into_pull_up_input(),
+        pins.d11.into_pull_up_input(),
+        pins.d10.into_pull_up_input(),
     );
 
     game.draw_full_screen(&mut lcd);
