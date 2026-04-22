@@ -2,20 +2,22 @@ use embedded_hal::digital::InputPin;
 
 use crate::{
     game::{
-        black_jack::BlackJack, block_catch::BlockCatch, note_beat::NoteBeat, overworld::Overworld,
-        sokoban::Sokoban, space_shooter::SpaceShooter, moon_landing::MoonLanding,
+        black_jack::BlackJack, block_catch::BlockCatch, minesweeper::Minesweeper,
+        moon_landing::MoonLanding, note_beat::NoteBeat, overworld::Overworld, sokoban::Sokoban,
+        space_shooter::SpaceShooter,
     },
     LCD,
 };
 
 pub mod black_jack;
 pub mod block_catch;
+pub mod minesweeper;
+pub mod moon_landing;
 pub mod note_beat;
 pub mod overworld;
 pub mod position;
 pub mod sokoban;
 pub mod space_shooter;
-pub mod moon_landing;
 
 pub struct Game<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> {
     pub repeat_time: [i8; 2],
@@ -42,6 +44,7 @@ pub enum GameMode {
     Sokoban(Sokoban),
     NoteBeat(NoteBeat),
     MoonLanding(MoonLanding),
+    Minesweeper(Minesweeper),
 }
 
 impl GameMode {
@@ -53,7 +56,8 @@ impl GameMode {
             GameMode::SpaceShooter(_) => 2,
             GameMode::Sokoban(_) => return None,
             GameMode::NoteBeat(_) => 3,
-            GameMode::MoonLanding(_)=> return None,
+            GameMode::MoonLanding(_) => return None,
+            GameMode::Minesweeper(_) => 5,
         })
     }
 }
@@ -88,8 +92,8 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::SpaceShooter(space_shooter) => space_shooter.draw_full_screen(lcd),
             GameMode::Sokoban(sokoban) => sokoban.draw_full_screen(lcd),
             GameMode::NoteBeat(note_beat) => note_beat.draw_full_screen(lcd),
-            GameMode::MoonLanding(mooon_landing) => mooon_landing.draw_full_screen(lcd),
-
+            GameMode::MoonLanding(moon_landing) => moon_landing.draw_full_screen(lcd),
+            GameMode::Minesweeper(minesweeper) => minesweeper.draw_full_screen(lcd),
         }
     }
 
@@ -107,7 +111,8 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::SpaceShooter(space_shooter) => space_shooter.update(lcd, raw_input),
             GameMode::Sokoban(sokoban) => sokoban.update(lcd, raw_input, soft_input),
             GameMode::NoteBeat(note_beat) => note_beat.update(lcd, raw_input, soft_input),
-            GameMode::MoonLanding(moon_landing)=> moon_landing.update(lcd, raw_input, soft_input),
+            GameMode::MoonLanding(moon_landing) => moon_landing.update(lcd, raw_input, soft_input),
+            GameMode::Minesweeper(minesweeper) => minesweeper.update(lcd, raw_input, soft_input),
         };
 
         if let Some(mode) = new_mode {
@@ -205,7 +210,13 @@ impl<Right: InputPin, Up: InputPin, Left: InputPin, Down: InputPin> Game<Right, 
             GameMode::Sokoban(_) => 0,
             GameMode::NoteBeat(note_beat) => note_beat.score,
             GameMode::MoonLanding(_) => 0,
-
+            GameMode::Minesweeper(minesweeper) => {
+                if minesweeper.player_won() {
+                    self.high_scores[slot as usize] + 1
+                } else {
+                    0
+                }
+            }
         }
     }
 }

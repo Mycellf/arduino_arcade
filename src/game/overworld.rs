@@ -38,7 +38,7 @@ impl Default for Overworld {
 
 impl Overworld {
     pub const PLAYER_CHARACTER: u8 = 0;
-    pub const SCORE_SYMBOLS: [u8; 6] = [0x06, b'W', 0x06, b'S', b'?', b'?'];
+    pub const SCORE_SYMBOLS: [u8; 6] = [0x06, b'W', 0x06, b'S', b'?', b'W'];
 
     pub fn draw_full_screen(&mut self, lcd: &mut LCD, scores: &[u32; 6]) {
         self.print_screen(lcd);
@@ -64,6 +64,8 @@ impl Overworld {
             Some(b'3') => Some(GameMode::SpaceShooter(SpaceShooter::default())),
             Some(b'4') => Some(GameMode::Sokoban(Sokoban::default())),
             Some(b'5') => Some(GameMode::NoteBeat(NoteBeat::default())),
+            // Some(b'6') => Some(GameMode::MoonLanding(MoonLanding::default())),
+            // Some(b'7') => Some(GameMode::Minesweeper(Minesweeper::default())),
             _ => 'outer: {
                 if self.player_position == old_position {
                     break 'outer None;
