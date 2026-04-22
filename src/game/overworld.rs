@@ -64,7 +64,6 @@ impl Overworld {
             Some(b'3') => Some(GameMode::SpaceShooter(SpaceShooter::default())),
             Some(b'4') => Some(GameMode::Sokoban(Sokoban::default())),
             Some(b'5') => Some(GameMode::NoteBeat(NoteBeat::default())),
-            Some(b'6')=> Some(GameMode::MoonLanding(MoonLanding::default())),
             _ => 'outer: {
                 if self.player_position == old_position {
                     break 'outer None;
