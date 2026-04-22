@@ -226,7 +226,7 @@ Player:
 |# # #|
 | # # |
 | # # |
-Up_enemy:
+Up Enemy:
 |#####|
 |# # #|
 |#####|
@@ -235,7 +235,7 @@ Up_enemy:
 |     |
 |     |
 |     |
-Down_enemy:
+Down Enemy:
 |     |
 |     |
 |     |
@@ -244,7 +244,7 @@ Down_enemy:
 |#####|
 |# # #|
 |#####|
-Default_enemy:
+Default Enemy:
 |     |
 |     |
 |#####|
@@ -253,19 +253,19 @@ Default_enemy:
 |#####|
 |     |
 |     |
-Up_enemy_miss:
+Up Enemy Miss:
 |#####|
 |# # #|
 |#####|
 | # # |
 |     |
-|#####|
-|#####|
-|#####|
-Down_enemy_miss:
-|#####|
-|#####|
-|#####|
+| ### |
+|#   #|
+| ### |
+Down Enemy Miss:
+| ### |
+|#   #|
+| ### |
 |     |
 | # # |
 |#####|
