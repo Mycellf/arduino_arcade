@@ -1,10 +1,10 @@
 use crate::{
     game::{position::Position, GameMode},
-     LCD,
+    LCD,
 };
 //use std::num::Float;
-use micromath::F32Ext;
 use arduino_hal::prelude::_unwrap_infallible_UnwrapInfallible;
+use micromath::F32Ext;
 ///speed , angle of speed
 /// level of thrust, angle of thrust
 /// amount of fuel f99%->f00%
@@ -50,11 +50,10 @@ impl Default for MoonLanding {
             ship_position: [Self::START_POSITION_X, Self::START_POSITION_Y],
             //grav_constent: 1,
             //moon_mass:1,
-
             gravity: 1, //grav_const and moon_mass replaced with numbers later
 
-            fuel: Self::STARTING_FUEL,  
-                     //some number
+            fuel: Self::STARTING_FUEL,
+            //some number
             ship_mass: Self::BASE_SHIP + Self::STARTING_FUEL as u16,
 
             distance_to_moon: get_distance(Self::START_POSITION_X, Self::START_POSITION_Y),
@@ -66,35 +65,33 @@ impl Default for MoonLanding {
             fuel_display: Position::new(0, 8),
 
             seperation_display: Position::new(1, 8),
-            seperation_moon: get_distance(Self::START_POSITION_X, Self::START_POSITION_X)-Self::MOON_RADIUS as f32,
+            seperation_moon: get_distance(Self::START_POSITION_X, Self::START_POSITION_X)
+                - Self::MOON_RADIUS as f32,
         }
     }
 }
 
-fn get_distance(x: f32, y: f32) -> f32{
-    let distance = (x) * (x) + (y)*(y);
-    let place_holder=distance.sqrt();
+fn get_distance(x: f32, y: f32) -> f32 {
+    let distance = (x) * (x) + (y) * (y);
+    let place_holder = distance.sqrt();
 
     return place_holder;
 }
 
 impl MoonLanding {
-    pub const START_POSITION_X: f32= 5000.0;
-    pub const START_POSITION_Y: f32= 5000.0;
-    pub const GRAVITY_CONSTANT: f32=1.0;
-    pub const MOON_MASS:u32=1;//place holder value
-    pub const MOON_RADIUS: u32=1;//place holder value
-    pub const BASE_SHIP: u16 = 400;// place holder value
-    pub const STARTING_FUEL: u8=100;
+    pub const START_POSITION_X: f32 = 5000.0;
+    pub const START_POSITION_Y: f32 = 5000.0;
+    pub const GRAVITY_CONSTANT: f32 = 1.0;
+    pub const MOON_MASS: u32 = 1; //place holder value
+    pub const MOON_RADIUS: u32 = 1; //place holder value
+    pub const BASE_SHIP: u16 = 400; // place holder value
+    pub const STARTING_FUEL: u8 = 100;
 
-    fn get_seperation(&self) -> f32 {
+    pub fn get_seperation(&self) -> f32 {
         let distance_to_core = get_distance(self.ship_position[0], self.ship_position[1]);
 
         return distance_to_core - Self::MOON_RADIUS as f32;
     }
-
-
-
 
     pub fn draw_full_screen(&mut self, lcd: &mut LCD) {
         //lcd.set_cursor(thrustDisplay);
@@ -108,16 +105,7 @@ impl MoonLanding {
         // uwrite!(lcd.fmt(), "fuel{}", fuel ).unwrap_infallible();
     }
 
-
-
-    
-    pub fn update(
-        &mut self,
-        lcd: &mut LCD,
-        raw_input: [i8; 2],
-        _: [i8; 2],
-    ) -> Option<GameMode> {
-
+    pub fn update(&mut self, _lcd: &mut LCD, raw_input: [i8; 2], _: [i8; 2]) -> Option<GameMode> {
         if raw_input[0] != 0 {
             return Some(GameMode::Overworld);
         }
