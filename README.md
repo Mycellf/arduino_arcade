@@ -23,3 +23,11 @@ Rust project for the _Arduino Uno_.
 ## License
 Licensed under the GNU GPL 3.0
    ([LICENSE](LICENSE) or <https://www.gnu.org/licenses/gpl-3.0.en.html>)
+
+## Summery
+A rust project for an arduino uno and 16x2 LCD Display (1602A / HD44780).
+It makes a tileable overworld in which you can easily add new games with 8 exchangeable unique sprites that you can make for each game.
+
+Currently 5 games 1(dodging blocks), 2(Black jack), 3(asteroid shooter), 4(sokoban, aka block pushing), and 5(enemy survival) are implemented.
+
+The controls are either 4 buttons to make a dpad or a joystick.
