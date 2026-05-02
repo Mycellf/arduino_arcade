@@ -13,6 +13,8 @@ Currently 5 games 1(dodging blocks), 2(Black jack), 3(asteroid shooter), 4(sokob
 
 The controls are either 4 buttons to make a dpad or a joystick (the joystick must be plugged in otherwise the floating analog inputs will give garbage inputs).
 
+![A 3d printed base plate with an Arduino Uno connected to a joystick, battery, and a breadboard with an LCD display and joystick](layout.jpg)
+
 ## Build Instructions
 1. Install prerequisites as described in the [`avr-hal` README] (`avr-gcc`, `avr-libc`, `avrdude`, [`ravedude`]).
 
