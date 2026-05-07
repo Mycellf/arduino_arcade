@@ -84,14 +84,12 @@ impl BlackJack {
         soft_input: [i8; 2],
     ) -> Option<GameMode> {
         if let Some(countdown) = &mut self.countdown {
-            let done = match countdown {
-                Countdown::Waiting(time) | Countdown::Exiting(time) | Countdown::Standing(time) => {
-                    *time = time.saturating_sub(1);
-                    *time == 0
-                }
-            };
+            let (Countdown::Standing(time) | Countdown::Waiting(time) | Countdown::Exiting(time)) =
+                countdown;
 
-            if done {
+            *time = time.saturating_sub(1);
+
+            if *time == 0 {
                 match countdown {
                     Countdown::Standing(_) => self.stand(lcd),
                     Countdown::Waiting(_) => {
