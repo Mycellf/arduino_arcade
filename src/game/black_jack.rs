@@ -30,17 +30,9 @@ pub enum Countdown {
 }
 
 impl Countdown {
-    pub fn standing() -> Self {
-        Self::Standing(30)
-    }
-
-    pub fn waiting() -> Self {
-        Self::Waiting(90)
-    }
-
-    pub fn exiting() -> Self {
-        Self::Exiting(150)
-    }
+    pub const START_STANDING: Self = Self::Standing(30);
+    pub const START_WAITING: Self = Self::Waiting(90);
+    pub const START_EXITING: Self = Self::Exiting(150);
 }
 
 impl Default for BlackJack {
@@ -103,7 +95,7 @@ impl BlackJack {
                 match countdown {
                     Countdown::Standing(_) => self.stand(lcd),
                     Countdown::Waiting(_) => {
-                        self.countdown = Some(Countdown::exiting());
+                        self.countdown = Some(Countdown::START_EXITING);
 
                         lcd.print_multiline(
                             Position::new(4, 0),
@@ -174,7 +166,7 @@ impl BlackJack {
         self.draw_scores(lcd);
 
         if self.player_points > 21 {
-            self.countdown = Some(Countdown::waiting());
+            self.countdown = Some(Countdown::START_WAITING);
         }
     }
 
@@ -183,9 +175,9 @@ impl BlackJack {
         self.draw_scores(lcd);
 
         self.countdown = Some(if self.dealer_points < 17 {
-            Countdown::standing()
+            Countdown::START_STANDING
         } else {
-            Countdown::waiting()
+            Countdown::START_WAITING
         });
     }
 
