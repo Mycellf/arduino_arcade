@@ -96,14 +96,14 @@ impl<T: Copy, const N: usize> Index<u8> for List<T, N> {
     type Output = T;
 
     fn index(&self, index: u8) -> &Self::Output {
-        assert!(index < N as u8);
+        assert!(index < self.len);
         unsafe { self.elements[index as usize].assume_init_ref() }
     }
 }
 
 impl<T: Copy, const N: usize> IndexMut<u8> for List<T, N> {
     fn index_mut(&mut self, index: u8) -> &mut Self::Output {
-        assert!(index < N as u8);
+        assert!(index < self.len);
         unsafe { self.elements[index as usize].assume_init_mut() }
     }
 }
